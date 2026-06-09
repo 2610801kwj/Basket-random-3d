@@ -3,45 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Basket Random - Stable Edition</title>
+    <title>3D Basket Random - 2vs2 High Quality Edition</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #111; font-family: 'Arial Black', sans-serif; }
+        body { margin: 0; overflow: hidden; background-color: #0a0a1a; font-family: 'Arial Black', sans-serif; }
         
         /* 메인 메뉴 */
         #menu {
-            position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.9);
+            position: absolute; width: 100%; height: 100%; background: rgba(5,5,15,0.95);
             display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100;
         }
-        #menu h1 { color: #fff; font-size: 50px; margin-bottom: 30px; text-shadow: 3px 3px 0px #ff6600; text-align: center; }
+        #menu h1 { color: #fff; font-size: 55px; margin-bottom: 5px; text-shadow: 4px 4px 0px #ff6600; text-align: center; }
+        #menu p { color: #888; font-size: 18px; margin-bottom: 30px; }
         .menu-btn {
-            width: 250px; padding: 15px; margin: 10px; font-size: 22px; font-weight: bold;
-            color: white; background: #ff6600; border: none; border-radius: 10px; cursor: pointer;
-            box-shadow: 0 5px 0 #b34700; transition: 0.1s;
+            width: 280px; padding: 16px; margin: 12px; font-size: 22px; font-weight: bold;
+            color: white; background: #ff6600; border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 6px 0 #b34700; transition: 0.1s;
         }
-        .menu-btn:active { transform: translateY(5px); box-shadow: none; }
+        .menu-btn:active { transform: translateY(6px); box-shadow: none; }
         
         /* 인게임 레이아웃 UI */
         #game-ui { display: none; }
         #ui {
             position: absolute; top: 20px; width: 100%; text-align: center;
-            color: white; font-size: 40px; font-weight: bold; text-shadow: 3px 3px 0px #000;
+            color: white; font-size: 45px; font-weight: bold; text-shadow: 3px 3px 0px #000;
             pointer-events: none; user-select: none; z-index: 10;
         }
         #info-text {
-            position: absolute; top: 80px; width: 100%; text-align: center;
-            color: #fffdd0; font-size: 20px; font-weight: bold; text-shadow: 2px 2px 0px #000; z-index: 10;
+            position: absolute; top: 85px; width: 100%; text-align: center;
+            color: #fffdd0; font-size: 18px; font-weight: bold; text-shadow: 2px 2px 0px #000; z-index: 10;
         }
 
         /* 양측 조작 설명창 */
         .control-box {
-            position: absolute; bottom: 20px; width: 220px; padding: 15px;
-            background: rgba(0, 0, 0, 0.75); border-radius: 12px; color: white;
-            font-family: sans-serif; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            z-index: 20; pointer-events: none; line-height: 1.8;
+            position: absolute; bottom: 20px; width: 240px; padding: 15px;
+            background: rgba(0, 0, 0, 0.8); border-radius: 12px; color: white;
+            font-family: sans-serif; font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            border-top: 4px solid #fff; z-index: 20; pointer-events: none; line-height: 1.8;
         }
-        #p1-controls { left: 20px; border-left: 6px solid #2255ff; }
-        #p2-controls { right: 20px; border-right: 6px solid #ff3333; }
-        .control-box h3 { margin: 0 0 8px 0; font-size: 18px; text-transform: uppercase; }
+        #p1-controls { left: 20px; border-color: #2255ff; }
+        #p2-controls { right: 20px; border-color: #ff3333; }
+        .control-box h3 { margin: 0 0 8px 0; font-size: 16px; text-transform: uppercase; }
         .key-badge {
             background: #444; border-radius: 4px; padding: 2px 6px;
             font-weight: bold; border-bottom: 2px solid #111; color: #fffdd0;
@@ -53,28 +54,29 @@
 
     <div id="menu">
         <h1>BASKET RANDOM 3D</h1>
+        <p>2vs2 TEAM SHOWDOWN</p>
         <button class="menu-btn" onclick="startGame(1)">1 PLAYER (vs AI)</button>
-        <button class="menu-btn" onclick="startGame(2)" style="background:#2255ff; box-shadow: 0 5px 0 #1133aa;">2 PLAYERS</button>
+        <button class="menu-btn" onclick="startGame(2)" style="background:#2255ff; box-shadow: 0 6px 0 #1133aa;">2 PLAYERS</button>
     </div>
 
     <div id="game-ui">
         <div id="ui"><span id="p1-score">0</span> : <span id="p2-score">0</span></div>
-        <div id="info-text">초기화 중...</div>
+        <div id="info-text">스타디움 입장 중...</div>
         
         <div id="p1-controls" class="control-box">
-            <h3 style="color: #6688ff;">Player 1 (Blue)</h3>
-            <div>⬅️ 후진 : <span class="key-badge">A</span></div>
-            <div>➡️ 전진 : <span class="key-badge">D</span></div>
+            <h3 style="color: #6688ff;">Blue Team (1P)</h3>
+            <div>🕹️ 팀 동시 조종 (공격수+수비수)</div>
+            <div>⬅️ 후진 : <span class="key-badge">A</span> | ➡️ 전진 : <span class="key-badge">D</span></div>
             <div>▲ 점프 : <span class="key-badge">W</span></div>
-            <div>▼ 슛공격 : <span class="key-badge">S</span></div>
+            <div>▼ 슛발사 / <b>⚡볼 스틸</b> : <span class="key-badge">S</span></div>
         </div>
 
         <div id="p2-controls" class="control-box">
-            <h3 id="p2-title" style="color: #ff6666;">Player 2 (Red)</h3>
-            <div>후진 ➡️ : <span class="key-badge">→</span></div>
-            <div>전진 ⬅️ : <span class="key-badge">←</span></div>
+            <h3 id="p2-title" style="color: #ff6666;">Red Team (2P)</h3>
+            <div>🕹️ 팀 동시 조종 (공격수+수비수)</div>
+            <div>후진 ➡️ : <span class="key-badge">→</span> | 전진 ⬅️ : <span class="key-badge">←</span></div>
             <div>▲ 점프 : <span class="key-badge">↑</span></div>
-            <div>▼ 슛공격 : <span class="key-badge">↓</span></div>
+            <div>▼ 슛발사 / <b>⚡볼 스틸</b> : <span class="key-badge">↓</span></div>
         </div>
     </div>
 
@@ -83,7 +85,6 @@
         let gameStarted = false;
         const keys = {};
 
-        // 키 입력 이벤트 등록
         window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
         window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
@@ -93,48 +94,56 @@
             document.getElementById('menu').style.display = 'none';
             document.getElementById('game-ui').style.display = 'block';
             
-            if(gameMode === 1) {
-                document.getElementById('p2-title').innerText = "Computer (AI)";
-            } else {
-                document.getElementById('p2-title').innerText = "Player 2 (Red)";
-            }
+            if(gameMode === 1) document.getElementById('p2-title').innerText = "AI Team (Red)";
+            else document.getElementById('p2-title').innerText = "Red Team (2P)";
 
-            // 라이브러리 체크 후 안전하게 엔진 초기화
             if (typeof THREE === 'undefined') {
-                alert("엔진 라이브러리를 정상적으로 불러오지 못했습니다. 새로고침을 해주세요.");
+                alert("엔진 로드 실패. 인터넷 연결을 확인하고 새로고침 해주세요.");
                 return;
             }
             initGame();
         }
 
         function initGame() {
-            // 1. 시스템 초기화 및 안전 옵션 설정
+            // 1. 씬 및 카메라 세팅
             const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x70c5ce);
+            scene.background = new THREE.Color(0x1a2536); // 기본 고급진 다크 네이비 배경
 
-            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 4.5, 11);
-            camera.lookAt(0, 2.5, 0);
+            const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 12);
+            camera.lookAt(0, 2.8, 0);
 
-            // 호환성을 위해 기본형으로 렌더러 생성 (성능 저하 요소 비활성화)
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.body.appendChild(renderer.domElement);
 
-            // 광원 추가
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+            // 2. 고품질 광원 (앰비언트 + 더블 디렉셔널로 입체감 강화)
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
             scene.add(ambientLight);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.4);
-            dirLight.position.set(5, 15, 7);
-            scene.add(dirLight);
+            
+            const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.4);
+            dirLight1.position.set(6, 18, 8);
+            scene.add(dirLight1);
 
-            // 물리용 바닥 메쉬
-            const floorGeo = new THREE.BoxGeometry(20, 0.5, 4);
-            const floorMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B, roughness: 0.3 });
-            const floor = new THREE.Mesh(floorGeo, floorMat);
-            floor.position.y = -0.25;
-            scene.add(floor);
+            const dirLight2 = new THREE.DirectionalLight(0xaaccff, 0.3); // 역광을 주어 입체감 부여
+            dirLight2.position.set(-6, 10, -5);
+            scene.add(dirLight2);
+
+            // 3. 디테일해진 코트 바닥 (라인 추가)
+            const floorGroup = new THREE.Group();
+            scene.add(floorGroup);
+
+            const floorGeo = new THREE.BoxGeometry(22, 0.5, 5);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0xcc7a33, roughness: 0.2 }); // 반짝이는 농구 코트 재질
+            const floorMain = new THREE.Mesh(floorGeo, floorMat);
+            floorMain.position.y = -0.25;
+            floorGroup.add(floorMain);
+
+            // 코트 센터라인 장식
+            const centerLine = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.52, 5), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+            centerLine.position.set(0, -0.24, 0);
+            floorGroup.add(centerLine);
 
             let leftGoalGroup = new THREE.Group();
             let rightGoalGroup = new THREE.Group();
@@ -146,246 +155,356 @@
             let currentBallType = "Basketball";
             let goalMoveTimer = 0;
 
-            function createCharacterGroup(color, xPos) {
-                const rootGroup = new THREE.Group();
-                rootGroup.position.set(xPos, 0, 0);
-                scene.add(rootGroup);
+            // 4. 고품질 캐릭터 생성 (유니폼 번호판, 신발 묘사 추가)
+            function createCharacter(color, xPos, isForward) {
+                const root = new THREE.Group();
+                root.position.set(xPos, 0, 0);
+                scene.add(root);
 
-                const charGroup = new THREE.Group();
-                rootGroup.add(charGroup);
+                const mesh = new THREE.Group();
+                root.add(mesh);
 
-                const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.3, 0.5), new THREE.MeshStandardMaterial({ color: color }));
-                body.position.y = 0.95;
-                charGroup.add(body);
+                // 유니폼 몸통
+                const body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.2, 0.55), new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 }));
+                body.position.y = 0.9;
+                mesh.add(body);
 
+                // 유니폼 등번호 마크 느낌 대용 구조물
+                const numberPlate = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.5, 0.58), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+                numberPlate.position.set(0, 1.0, 0);
+                mesh.add(numberPlate);
+
+                // 피부색 머리
                 const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
-                head.position.y = 1.8;
-                charGroup.add(head);
+                head.position.y = 1.75;
+                mesh.add(head);
 
-                const arm = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.9, 0.16), new THREE.MeshStandardMaterial({ color: color }));
-                arm.position.set(0, 1.5, 0);
-                charGroup.add(arm);
+                // 머리 띠 추가 (디테일)
+                const hairBand = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.12, 0.64), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+                hairBand.position.set(0, 1.85, 0);
+                mesh.add(hairBand);
 
-                const costumeGroup = new THREE.Group();
-                charGroup.add(costumeGroup);
+                // 관절 팔
+                const arm = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.85, 0.18), new THREE.MeshStandardMaterial({ color: color }));
+                arm.position.set(0, 1.4, 0);
+                mesh.add(arm);
 
-                return { root: rootGroup, mesh: charGroup, arm: arm, costume: costumeGroup, color: color, velY:0, velX:0, rotVel:0, isGrounded:true };
+                // 신발 레이어
+                const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.2, 0.58), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+                shoe.position.y = 0.1;
+                mesh.add(shoe);
+
+                const costume = new THREE.Group();
+                mesh.add(costume);
+
+                return { root, mesh, arm, costume, color, velY:0, velX:0, rotVel:0, isGrounded:true, isForward };
             }
 
-            const p1 = createCharacterGroup(0x2255ff, -4);
-            const p2 = createCharacterGroup(0xff3333, 4);
+            // 🏀 2대2 구조 배열 세팅 (공격수, 수비수 배치)
+            const team1 = [
+                createCharacter(0x2255ff, -3, true),   // 1P 공격수 (앞선)
+                createCharacter(0x1133aa, -5.5, false)  // 1P 수비수 (골대앞)
+            ];
+            const team2 = [
+                createCharacter(0xff3333, 3, true),    // 2P 공격수 (앞선)
+                createCharacter(0xaa1111, 5.5, false)   // 2P 수비수 (골대앞)
+            ];
 
-            function changeCharacterCostume(char, type) {
+            // 코스튬 다양화
+            function changeCostume(char, type) {
                 while(char.costume.children.length > 0) char.costume.remove(char.costume.children[0]);
-                if (type === "FancyHat") {
-                    const topHat = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.4), new THREE.MeshStandardMaterial({ color: 0x111111 })); topHat.position.set(0, 2.3, 0);
-                    const brim = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.05, 0.65), new THREE.MeshStandardMaterial({ color: 0x111111 })); brim.position.set(0, 2.1, 0);
-                    char.costume.add(topHat, brim);
-                } else if (type === "AfroHair") {
-                    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 12), new THREE.MeshStandardMaterial({ color: 0xffaa00 })); hair.position.set(0, 2.1, 0);
-                    char.costume.add(hair);
-                } else if (type === "Crown") {
-                    const crown = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.4, 5), new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8 })); crown.position.set(0, 2.2, 0);
-                    char.costume.add(crown);
-                } else if (type === "LongBody") {
-                    char.mesh.scale.set(1, 1.4, 1);
-                } else {
-                    char.mesh.scale.set(1, 1, 1);
+                if (type === "Crown") {
+                    const c = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.4, 5), new THREE.MeshStandardMaterial({ color: 0xffd700, metalness:0.8 }));
+                    c.position.set(0, 2.15, 0); char.costume.add(c);
+                } else if (type === "Afro") {
+                    const h = new THREE.Mesh(new THREE.SphereGeometry(0.4, 10, 10), new THREE.MeshStandardMaterial({ color: 0xd48800 }));
+                    h.position.set(0, 2.1, 0); char.costume.add(h);
+                } else if (type === "Cap") {
+                    const cap = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.15, 0.7), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+                    cap.position.set(0, 2.1, 0.1); char.costume.add(cap);
                 }
             }
 
-            const ball = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 16), new THREE.MeshStandardMaterial());
-            scene.add(ball);
-            let ballVel = new THREE.Vector3();
-            let ballState = "free";
-            let p1Score = 0, p2Score = 0;
-
+            // 5. 고품질 입체 골대 구조 빌드
             function buildGoals(type) {
                 while(leftGoalGroup.children.length > 0) leftGoalGroup.remove(leftGoalGroup.children[0]);
                 while(rightGoalGroup.children.length > 0) rightGoalGroup.remove(rightGoalGroup.children[0]);
+                
                 currentGoalType = type;
-                leftGoalGroup.position.set(-8.5, 0, 0); rightGoalGroup.position.set(8.5, 0, 0);
-                let pHeight = 4.2; let rHeight = 3.4; let rRadius = 0.32; let pColor = 0xdddddd;
-                if (type === "Mini") { pHeight = 2.4; rHeight = 1.8; rRadius = 0.22; }
-                else if (type === "Giant") { pHeight = 5.5; rHeight = 4.5; rRadius = 0.6; }
-                else if (type === "TrashCan") { pColor = 0x556655; pHeight = 1.5; rHeight = 1.5; rRadius = 0.4; }
+                leftGoalGroup.position.set(-9.2, 0, 0);
+                rightGoalGroup.position.set(9.2, 0, 0);
 
-                function makeOne(group, isLeft) {
-                    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, pHeight), new THREE.MeshStandardMaterial({ color: pColor }));
-                    pole.position.y = pHeight / 2; group.add(pole);
-                    if (type !== "TrashCan") {
-                        const board = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.3 * (rRadius/0.32), 1.8 * (rRadius/0.32)), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-                        board.position.set(isLeft ? 0.4 : -0.4, pHeight, 0); group.add(board);
-                    }
-                    const rim = new THREE.Mesh(new THREE.TorusGeometry(rRadius, 0.035, 8, 24), new THREE.MeshStandardMaterial({ color: type === "TrashCan" ? 0x333333 : 0xff4500 }));
-                    rim.rotation.x = Math.PI / 2; rim.position.set(isLeft ? (type==="TrashCan"?0:0.6) : (type==="TrashCan"?0:-0.6), rHeight, 0);
-                    group.add(rim); return rim;
+                let pH = 4.4, rH = 3.5, rRad = 0.35, pCol = 0xdddddd;
+                if(type === "Mini") { pH = 2.6; rH = 1.9; rRad = 0.24; }
+                if(type === "Giant") { pH = 5.8; rH = 4.6; rRad = 0.58; }
+
+                function makeStructure(group, isLeft) {
+                    // 메인 기둥
+                    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, pH, 12), new THREE.MeshStandardMaterial({ color: pCol, metalness:0.5 }));
+                    pole.position.y = pH/2; group.add(pole);
+
+                    // 백보드 두께감 상향
+                    const board = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.4*(rRad/0.35), 2.2*(rRad/0.35)), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness:0.1 }));
+                    board.position.set(isLeft ? 0.5 : -0.5, pH, 0);
+                    group.add(board);
+
+                    // 백보드 내부 빨간 사각형 가이드라인 라인 장식
+                    const boardIn = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.5*(rRad/0.35), 0.7*(rRad/0.35)), new THREE.MeshStandardMaterial({ color: 0xff3333 }));
+                    boardIn.position.set(isLeft ? 0.5 : -0.5, pH - 0.2, 0);
+                    group.add(boardIn);
+
+                    // 농구 림
+                    const rim = new THREE.Mesh(new THREE.TorusGeometry(rRad, 0.04, 8, 20), new THREE.MeshStandardMaterial({ color: 0xff5500 }));
+                    rim.rotation.x = Math.PI / 2;
+                    rim.position.set(isLeft ? 0.7 : -0.7, rH, 0);
+                    group.add(rim);
+                    return rim;
                 }
-                leftRim = makeOne(leftGoalGroup, true); rightRim = makeOne(rightGoalGroup, false);
+                leftRim = makeStructure(leftGoalGroup, true);
+                rightRim = makeStructure(rightGoalGroup, false);
             }
 
-            function changeBallType(type) {
+            // 6. 공 세팅
+            const ball = new THREE.Mesh(new THREE.SphereGeometry(0.28, 20, 20), new THREE.MeshStandardMaterial());
+            scene.add(ball);
+            let ballVel = new THREE.Vector3();
+            
+            // ballState 가 구조물 개체가 아닌 문자열+인덱스로 추적되도록 변경 ("free", "p1_0", "p1_1", "p2_0", "p2_1")
+            let ballState = "free"; 
+            let p1Score = 0, p2Score = 0;
+
+            function changeBall(type) {
                 currentBallType = type;
-                ball.material.metalness = 0; ball.material.roughness = 0.4; ball.geometry.dispose();
-                if (type === "Basketball") { ball.geometry = new THREE.SphereGeometry(0.26, 16, 16); ball.material.color.setHex(0xff6600); }
-                else if (type === "Soccer") { ball.geometry = new THREE.SphereGeometry(0.25, 16, 16); ball.material.color.setHex(0xffffff); }
-                else if (type === "Bowling") { ball.geometry = new THREE.SphereGeometry(0.28, 16, 16); ball.material.color.setHex(0x221144); }
-                else if (type === "Gold") { ball.geometry = new THREE.SphereGeometry(0.26, 16, 16); ball.material.color.setHex(0xffd700); ball.material.metalness = 0.9; ball.material.roughness = 0.1; }
-                else if (type === "Rugby") { ball.geometry = new THREE.SphereGeometry(0.26, 16, 16); ball.geometry.scale(1.5, 1, 1); ball.material.color.setHex(0x8B4513); }
-            }
-
-            function changeMapTheme() {
-                const themes = ["Gym", "Ice", "Beach", "Street", "Dark"];
-                const rTheme = themes[Math.floor(Math.random() * themes.length)];
-                if (rTheme === "Ice") { scene.background.setHex(0xd0e8f5); floor.material.color.setHex(0xffffff); }
-                else if (rTheme === "Beach") { scene.background.setHex(0xffdb7d); floor.material.color.setHex(0xdfb76c); }
-                else if (rTheme === "Street") { scene.background.setHex(0x555566); floor.material.color.setHex(0x333333); }
-                else if (rTheme === "Dark") { scene.background.setHex(0x111122); floor.material.color.setHex(0x151525); }
-                else { scene.background.setHex(0x70c5ce); floor.material.color.setHex(0x8B5A2B); }
-                return rTheme;
+                ball.material.metalness = 0; ball.material.roughness = 0.3;
+                if(type === "Gold") { ball.material.color.setHex(0xffd700); ball.material.metalness = 0.9; }
+                else if(type === "Soccer") { ball.material.color.setHex(0xffffff); ball.material.roughness = 0.6; }
+                else if(type === "Bowling") { ball.material.color.setHex(0x111133); ball.material.roughness = 0.1; }
+                else { ball.material.color.setHex(0xff6600); } // 기본 농구공
             }
 
             function resetRound() {
-                const mapName = changeMapTheme();
-                const ballTypes = ["Basketball", "Soccer", "Bowling", "Gold", "Rugby"];
-                const rBall = ballTypes[Math.floor(Math.random() * ballTypes.length)];
-                changeBallType(rBall);
-
-                const goalTypes = ["Normal", "Mini", "Giant", "TrashCan", "Moving"];
-                const rGoal = goalTypes[Math.floor(Math.random() * goalTypes.length)];
-                buildGoals(rGoal);
-
-                const costumeTypes = ["Normal", "FancyHat", "AfroHair", "Crown", "LongBody"];
-                changeCharacterCostume(p1, costumeTypes[Math.floor(Math.random() * costumeTypes.length)]);
-                changeCharacterCostume(p2, costumeTypes[Math.floor(Math.random() * costumeTypes.length)]);
-
-                document.getElementById('info-text').innerText = `모드: ${gameMode==1?'1인용':'2인용'} | 테마: ${mapName} | 공: ${rBall} | 골대: ${rGoal}`;
-
-                p1.root.position.set(-4, 0, 0); p1.mesh.rotation.z = 0; p1.velX = 0; p1.velY = 0;
-                p2.root.position.set(4, 0, 0);  p2.mesh.rotation.z = 0; p2.velX = 0; p2.velY = 0;
+                // 이펙트 및 스케일 리셋
+                const themes = [0x1a2536, 0x112211, 0x221122, 0x222222];
+                scene.background.setHex(themes[Math.floor(Math.random() * themes.length)]);
                 
-                ball.position.set(0, 4.5, 0);
-                ballVel.set((Math.random() - 0.5) * 3, 2, 0);
+                const bTypes = ["Basketball", "Soccer", "Bowling", "Gold"];
+                changeBall(bTypes[Math.floor(Math.random() * bTypes.length)]);
+
+                const gTypes = ["Normal", "Mini", "Giant", "Moving"];
+                buildGoals(gTypes[Math.floor(Math.random() * gTypes.length)]);
+
+                const cos = ["Normal", "Crown", "Afro", "Cap"];
+                team1.forEach(c => changeCostume(c, cos[Math.floor(Math.random()*cos.length)]));
+                team2.forEach(c => changeCostume(c, cos[Math.floor(Math.random()*cos.length)]));
+
+                document.getElementById('info-text').innerText = `경기 방식: 2vs2 대전 | 골대: ${currentGoalType} | 매치 볼: ${currentBallType}`;
+
+                // 포지션 초기화 (공격수 수비수 간격 배치)
+                team1[0].root.position.set(-2.5, 0, 0); team1[1].root.position.set(-5.5, 0, 0);
+                team2[0].root.position.set(2.5, 0, 0);  team2[1].root.position.set(5.5, 0, 0);
+
+                [...team1, ...team2].forEach(c => {
+                    c.mesh.rotation.z = 0; c.velX = 0; c.velY = 0; c.rotVel = 0; c.isGrounded = true;
+                });
+
+                ball.position.set(0, 5, 0);
+                ballVel.set((Math.random() - 0.5) * 2, 2.5, 0);
                 ballState = "free";
             }
 
             resetRound();
 
-            function shootBall(playerNum) {
+            // 슛 메커니즘
+            function fireShoot(dirSign) {
                 ballState = "free";
-                let pY = 6 + Math.random() * 3;
-                if (currentBallType === "Bowling") pY -= 2.5;
-                if (currentBallType === "Gold") pY += 2.5;
-
-                if (playerNum === 1) { ballVel.set(5 + Math.random() * 4, pY, 0); } 
-                else { ballVel.set(-(5 + Math.random() * 4), pY, 0); }
+                let pY = 6.5 + Math.random()*2.5;
+                if(currentBallType === "Bowling") pY -= 2.5;
+                ballVel.set(dirSign * (6 + Math.random()*4), pY, 0);
             }
 
-            const gravity = -18; const dt = 0.016; const moveSpeed = 4;
+            const gravity = -19; const dt = 0.016; const moveSpeed = 4.5;
 
-            function handleInput() {
-                // --- 1P 조작 (WASD) ---
-                if (p1.isGrounded) {
-                    p1.velX = 0;
-                    if (keys['a']) p1.velX = -moveSpeed;
-                    if (keys['d']) p1.velX = moveSpeed;
-                    if (keys['w']) { p1.velY = 9; p1.isGrounded = false; p1.rotVel = (Math.random() - 0.5) * 4; }
-                    if (keys['s'] && ballState === "p1") { shootBall(1); }
-                }
+            // 실시간 키 입력 프로세서 (2대2 동시 조작 연산 및 스틸 판정 포함)
+            function processInputs() {
+                // --- 1P 블루팀 조작 (WASD) ---
+                let p1JumpTrigger = false;
+                let p1StealShootTrigger = false;
+                let p1MoveX = 0;
 
-                // --- 2P 조작 (방향키) ---
-                if (gameMode === 2) {
-                    if (p2.isGrounded) {
-                        p2.velX = 0;
-                        if (keys['arrowleft']) p2.velX = -moveSpeed;
-                        if (keys['arrowright']) p2.velX = moveSpeed;
-                        if (keys['arrowup']) { p2.velY = 9; p2.isGrounded = false; p2.rotVel = (Math.random() - 0.5) * 4; }
-                        if (keys['arrowdown'] && ballState === "p2") { shootBall(2); }
-                    }
-                } else {
-                    // --- 컴퓨터 AI 조작 ---
-                    if (p2.isGrounded) {
-                        p2.velX = 0;
-                        if (ball.position.x < p2.root.position.x - 0.3) p2.velX = -moveSpeed * 0.8;
-                        if (ball.position.x > p2.root.position.x + 0.3) p2.velX = moveSpeed * 0.8;
-                        
-                        if (ball.position.distanceTo(p2.root.position) < 3.5 && Math.random() < 0.04) {
-                            p2.velY = 9; p2.isGrounded = false; p2.rotVel = (Math.random() - 0.5) * 4;
+                if (keys['a']) p1MoveX = -moveSpeed;
+                if (keys['d']) p1MoveX = moveSpeed;
+                if (keys['w']) p1JumpTrigger = true;
+                if (keys['s']) p1StealShootTrigger = true;
+
+                team1.forEach((char, idx) => {
+                    if (char.isGrounded) {
+                        char.velX = p1MoveX;
+                        if (p1JumpTrigger) {
+                            char.velY = 8.5 + (idx * 0.5); // 공격수와 수비수의 점프 타이밍 살짝 분리하여 입체감 부여
+                            char.isGrounded = false;
+                            char.rotVel = (Math.random() - 0.5) * 3;
                         }
-                        if (ballState === "p2") shootBall(2);
+                        // 슛 및 스틸 동작 처리
+                        if (p1StealShootTrigger) {
+                            if (ballState === `p1_${idx}`) {
+                                fireShoot(1); // 블루팀은 오른쪽 골대로 슛
+                            } else if (ballState.startsWith("p2")) {
+                                // ⚡ 볼 스틸 연산: 소유자와 나의 거리가 가까울 때 S를 누르면 가로채기 가능
+                                let targetIdx = ballState.split("_")[1];
+                                let targetChar = team2[targetIdx];
+                                if (char.root.position.distanceTo(targetChar.root.position) < 1.6) {
+                                    ballState = `p1_${idx}`; // 스틸 성공
+                                }
+                            }
+                        }
                     }
+                });
+
+                // --- 2P 레드팀 조작 (방향키) ---
+                if (gameMode === 2) {
+                    let p2JumpTrigger = false;
+                    let p2StealShootTrigger = false;
+                    let p2MoveX = 0;
+
+                    if (keys['arrowleft']) p2MoveX = -moveSpeed;
+                    if (keys['arrowright']) p2MoveX = moveSpeed;
+                    if (keys['arrowup']) p2JumpTrigger = true;
+                    if (keys['arrowdown']) p2StealShootTrigger = true;
+
+                    team2.forEach((char, idx) => {
+                        if (char.isGrounded) {
+                            char.velX = p2MoveX;
+                            if (p2JumpTrigger) {
+                                char.velY = 8.5 + (idx * 0.5);
+                                char.isGrounded = false;
+                                char.rotVel = (Math.random() - 0.5) * 3;
+                            }
+                            if (p2StealShootTrigger) {
+                                if (ballState === `p2_${idx}`) {
+                                    fireShoot(-1); // 레드팀은 왼쪽 골대로 슛
+                                } else if (ballState.startsWith("p1")) {
+                                    // ⚡ 볼 스틸 연산
+                                    let targetIdx = ballState.split("_")[1];
+                                    let targetChar = team1[targetIdx];
+                                    if (char.root.position.distanceTo(targetChar.root.position) < 1.6) {
+                                        ballState = `p2_${idx}`; // 스틸 성공
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    // --- 🤖 스마트 2대2 팀 AI 대전 알고리즘 ---
+                    team2.forEach((char, idx) => {
+                        if (char.isGrounded) {
+                            char.velX = 0;
+                            // 공격수 AI: 공을 따라 전진/후진 추적
+                            if (char.isForward) {
+                                if (ball.position.x < char.root.position.x - 0.2) char.velX = -moveSpeed * 0.75;
+                                if (ball.position.x > char.root.position.x + 0.2) char.velX = moveSpeed * 0.75;
+                                
+                                // 볼 소유시 즉시 자동 슛
+                                if (ballState === `p2_${idx}`) fireShoot(-1);
+                                // 블루팀이 공을 가졌고 근접해있다면 상시 스틸 시도
+                                if (ballState.startsWith("p1") && ball.position.distanceTo(char.root.position) < 1.5 && Math.random() < 0.1) {
+                                    ballState = `p2_${idx}`;
+                                }
+                            } else {
+                                // 수비수 AI: 자기 골대 근처 사수 및 날아오는 공 방어 점프
+                                let defendSpot = 5.5;
+                                if (char.root.position.x < defendSpot - 0.3) char.velX = moveSpeed * 0.6;
+                                if (char.root.position.x > defendSpot + 0.3) char.velX = -moveSpeed * 0.6;
+
+                                if (ball.position.x > 2.0 && Math.random() < 0.035) {
+                                    char.velY = 9; char.isGrounded = false; char.rotVel = (Math.random()-0.5)*3;
+                                }
+                                if (ballState === `p2_${idx}`) fireShoot(-1);
+                            }
+                        }
+                    });
                 }
             }
 
             function updatePhysics(char) {
                 if (!char.isGrounded) {
-                    char.velY += gravity * dt; char.root.position.y += char.velY * dt; char.root.position.x += char.velX * dt; char.mesh.rotation.z += char.rotVel * dt;
-                    char.arm.position.y = 1.5 + Math.sin(Date.now() * 0.025) * 0.35; char.arm.rotation.z = Math.cos(Date.now() * 0.025) * 0.6;
+                    char.velY += gravity * dt;
+                    char.root.position.y += char.velY * dt;
+                    char.root.position.x += char.velX * dt;
+                    char.mesh.rotation.z += char.rotVel * dt;
+
+                    // 역동적인 팔 스윙 동작 애니메이션 적용
+                    char.arm.position.y = 1.4 + Math.sin(Date.now() * 0.03) * 0.3;
+                    char.arm.rotation.z = Math.cos(Date.now() * 0.03) * 0.8;
                 } else {
                     char.root.position.x += char.velX * dt;
                 }
+
                 if (char.root.position.y <= 0) {
                     char.root.position.y = 0; char.mesh.rotation.z = 0; char.velY = 0; char.rotVel = 0; char.isGrounded = true;
-                    char.arm.position.set(0, 1.5, 0); char.arm.rotation.z = 0;
+                    char.arm.position.set(0, 1.4, 0); char.arm.rotation.z = 0;
                 }
-                if(char.root.position.x < -9) char.root.position.x = -9;
-                if(char.root.position.x > 9) char.root.position.x = 9;
+
+                // 포지션 이탈 벽 제어
+                if(char.root.position.x < -9.5) char.root.position.x = -9.5;
+                if(char.root.position.x > 9.5) char.root.position.x = 9.5;
             }
 
             function animate() {
                 requestAnimationFrame(animate);
 
-                handleInput();
-                updatePhysics(p1);
-                updatePhysics(p2);
+                processInputs();
+                team1.forEach(updatePhysics);
+                team2.forEach(updatePhysics);
 
+                // 무빙 골대 기믹 작동
                 if (currentGoalType === "Moving") {
-                    goalMoveTimer += dt * 2;
-                    const moveOffset = Math.sin(goalMoveTimer) * 1.5;
-                    leftGoalGroup.position.y = moveOffset > 0 ? moveOffset : 0;
-                    rightGoalGroup.position.y = moveOffset < 0 ? -moveOffset : 0;
+                    goalMoveTimer += dt * 2.2;
+                    const offset = Math.sin(goalMoveTimer) * 1.4;
+                    leftGoalGroup.position.y = offset > 0 ? offset : 0;
+                    rightGoalGroup.position.y = offset < 0 ? -offset : 0;
                 } else {
                     leftGoalGroup.position.y = 0; rightGoalGroup.position.y = 0;
                 }
 
+                // 7. 공의 가속도 시뮬레이션 및 소유권 감지 연산
                 if (ballState === "free") {
-                    let ballGravity = gravity;
-                    if (currentBallType === "Bowling") ballGravity *= 1.8;
-                    if (currentBallType === "Gold") ballGravity *= 0.6;
+                    let bGrav = gravity;
+                    if(currentBallType === "Bowling") bGrav *= 1.7;
+                    ballVel.y += bGrav * dt; ball.position.x += ballVel.x * dt; ball.position.y += ballVel.y * dt;
 
-                    ballVel.y += ballGravity * dt; ball.position.x += ballVel.x * dt; ball.position.y += ballVel.y * dt;
-
-                    let bounce = 0.75;
-                    if (currentBallType === "Bowling") bounce = 0.25;
-                    if (currentBallType === "Soccer") bounce = 0.9;
-
-                    if (ball.position.y <= 0.25) {
-                        ball.position.y = 0.25; ballVel.y = -ballVel.y * bounce;
-                        if (currentBallType === "Rugby") ballVel.x += (Math.random() - 0.5) * 4;
-                        else ballVel.x *= 0.92;
+                    // 바닥 및 벽면 리바운드 반사
+                    let bounce = 0.75; if(currentBallType === "Bowling") bounce = 0.2;
+                    if (ball.position.y <= 0.28) {
+                        ball.position.y = 0.28; ballVel.y = -ballVel.y * bounce; ballVel.x *= 0.95;
                     }
-                    if (Math.abs(ball.position.x) > 9.5) ballVel.x = -ballVel.x * 0.75;
+                    if (Math.abs(ball.position.x) > 9.8) ballVel.x = -ballVel.x * 0.75;
 
-                    if (ball.position.distanceTo(p1.root.position.clone().add(new THREE.Vector3(0,1.1,0))) < 1.3) ballState = "p1";
-                    if (ball.position.distanceTo(p2.root.position.clone().add(new THREE.Vector3(0,1.1,0))) < 1.3) ballState = "p2";
+                    // 루즈볼 획득 실시간 가로채기 반경 충돌 감지
+                    team1.forEach((c, idx) => {
+                        if (ball.position.distanceTo(c.root.position.clone().add(new THREE.Vector3(0,1.1,0))) < 1.2) ballState = `p1_${idx}`;
+                    });
+                    team2.forEach((c, idx) => {
+                        if (ball.position.distanceTo(c.root.position.clone().add(new THREE.Vector3(0,1.1,0))) < 1.2) ballState = `p2_${idx}`;
+                    });
 
-                } else if (ballState === "p1") {
-                    ball.position.set(p1.root.position.x + 0.45, p1.root.position.y + 1.6, 0);
-                } else if (ballState === "p2") {
-                    ball.position.set(p2.root.position.x - 0.45, p2.root.position.y + 1.6, 0);
+                } else {
+                    // 플레이어 공 소유 핸들링 (소유자 머리 앞에 공이 세팅됨)
+                    let side = ballState.startsWith("p1") ? 1 : -1;
+                    let idx = ballState.split("_")[1];
+                    let owner = side === 1 ? team1[idx] : team2[idx];
+                    ball.position.set(owner.root.position.x + (0.45 * side), owner.root.position.y + 1.5, 0);
+                    ballVel.set(0,0,0);
                 }
 
+                // 8. 림 통과 득점 판정 및 라운드 전환
                 const leftRimPos = leftGoalGroup.position.clone().add(leftRim.position);
                 const rightRimPos = rightGoalGroup.position.clone().add(rightRim.position);
+                let scoreRad = currentGoalType === "Mini" ? 0.35 : (currentGoalType === "Giant" ? 0.75 : 0.48);
 
-                let scoreRadius = 0.5;
-                if (currentGoalType === "Mini") scoreRadius = 0.35;
-                if (currentGoalType === "Giant") scoreRadius = 0.8;
-
-                if (ball.position.distanceTo(leftRimPos) < scoreRadius && ballVel.y < 0) {
+                if (ball.position.distanceTo(leftRimPos) < scoreRad && ballVel.y < 0) {
                     p2Score++; document.getElementById('p2-score').innerText = p2Score; resetRound();
                 }
-                if (ball.position.distanceTo(rightRimPos) < scoreRadius && ballVel.y < 0) {
+                if (ball.position.distanceTo(rightRimPos) < scoreRadius = scoreRad && ballVel.y < 0) {
                     p1Score++; document.getElementById('p1-score').innerText = p1Score; resetRound();
                 }
 
@@ -393,8 +512,7 @@
             }
 
             window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
+                camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
             });
 
