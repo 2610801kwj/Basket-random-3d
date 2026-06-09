@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Basket Random - Perfect Release Edition</title>
+    <title>3D Basket Random - Input Fixed Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #05050f; font-family: 'Arial Black', sans-serif; }
         
@@ -51,36 +51,38 @@
 
     <div id="menu">
         <h1>BASKET RANDOM 3D</h1>
-        <p>RE-TUNED SHOOT RELEASE PHYSICS</p>
+        <p>CRITICAL INPUT BUG FIXED</p>
         <button class="menu-btn" onclick="startGame(1)">1 PLAYER (vs AI)</button>
         <button class="menu-btn" onclick="startGame(2)" style="background:#2255ff; box-shadow: 0 6px 0 #1133aa;">2 PLAYERS</button>
     </div>
 
     <div id="game-ui">
         <div id="ui"><span id="p1-score">0</span> : <span id="p2-score">0</span></div>
-        <div id="info-text">아레나 로딩 중...</div>
+        <div id="info-text">아레나 준비 완료</div>
         
         <div id="p1-controls" class="control-box">
             <h3 style="color: #6688ff;">Blue Team (1P)</h3>
-            <div>⬅️ 이동 : <span class="key-badge">A</span> , <span class="key-badge">D</span></div>
-            <div>▲ 점프 / 자동 슛 탈출 : <span class="key-badge">W</span></div>
+            <div>⬅️ 후진 : <span class="key-badge">A</span> | 전진 ➡️ : <span class="key-badge">D</span></div>
+            <div>▲ 점프 & 슛 & 스틸 : <span class="key-badge">W</span></div>
         </div>
 
         <div id="p2-controls" class="control-box">
             <h3 id="p2-title" style="color: #ff6666;">Red Team (2P)</h3>
-            <div>⬅️ 이동 : <span class="key-badge">←</span> , <span class="key-badge">→</span></div>
-            <div>▲ 점프 / 자동 슛 탈출 : <span class="key-badge">↑ (Up)</span></div>
+            <div>⬅️ 전진 : <span class="key-badge">←</span> | 후진 ➡️ : <span class="key-badge">→</span></div>
+            <div>▲ 점프 & 슛 & 스틸 : <span class="key-badge">↑ (Up)</span></div>
         </div>
     </div>
 
     <script>
         let gameMode = 1;
         let gameStarted = false;
+        
+        // 🛠️ 버그 수정: 대소문자 변환 문제없는 물리적 키 코드(code) 저장소로 변경
         const keys = {};
         const prevKeys = {}; 
 
-        window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
-        window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+        window.addEventListener('keydown', (e) => { keys[e.code] = true; });
+        window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
         function startGame(mode) {
             gameMode = mode;
@@ -103,7 +105,7 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.body.appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
             scene.add(ambientLight);
             const mainLight = new THREE.DirectionalLight(0xffffff, 0.6);
             mainLight.position.set(10, 22, 12);
@@ -223,7 +225,7 @@
                 const gTypes = ["Normal", "Mini", "Giant", "Moving"];
                 buildGoals(gTypes[Math.floor(Math.random() * gTypes.length)]);
 
-                document.getElementById('info-text').innerText = `매치볼: ${currentBallType} | 골대 기믹: ${currentGoalType}`;
+                document.getElementById('info-text').innerText = `매치볼: ${currentBallType} | 골대: ${currentGoalType}`;
 
                 team1[0].root.position.set(-2.5, 0, 0); team1[1].root.position.set(-5.5, 0, 0);
                 team2[0].root.position.set(2.5, 0, 0);  team2[1].root.position.set(5.5, 0, 0);
@@ -240,33 +242,32 @@
 
             resetRound();
 
-            // 🚀 확실하게 전방으로 밀어나가도록 조정한 슛 함수
             function fireShoot(dirSign) {
                 ballState = "free";
-                let powerX = 11.5 + Math.random() * 3.0; // 앞으로 뻗어나가는 힘 강화
-                let powerY = 9.5 + Math.random() * 2.5;  // 포물선 높이 충분히 확보
+                let powerX = 12.0 + Math.random() * 3.0; 
+                let powerY = 9.5 + Math.random() * 2.5; 
                 
                 if(currentBallType === "Bowling") { powerX *= 0.6; powerY *= 0.5; }
                 ballVel.set(dirSign * powerX, powerY, 0);
             }
 
-            const gravity = -20.0; const dt = 0.016; const moveSpeed = 5.0;
+            const gravity = -20.0; const dt = 0.016; const moveSpeed = 5.5;
 
+            // 🕹️ 시스템 변경: 물리적인 KeyCode(KeyA, KeyD, KeyW) 기반 매핑
             function processInputs() {
-                // --- 1P 블루팀 제어 ---
+                // --- 1P 블루팀 제어 (KeyA, KeyD = 좌우 / KeyW = 점프+슛) ---
                 let p1MoveX = 0;
-                if (keys['a']) p1MoveX = -moveSpeed;
-                if (keys['d']) p1MoveX = moveSpeed;
+                if (keys['KeyA']) p1MoveX = -moveSpeed;
+                if (keys['KeyD']) p1MoveX = moveSpeed;
 
                 let p1JumpAction = false;
-                if (keys['w'] && !prevKeys['w']) p1JumpAction = true;
-                prevKeys['w'] = keys['w'];
+                if (keys['KeyW'] && !prevKeys['KeyW']) p1JumpAction = true;
+                prevKeys['KeyW'] = keys['KeyW'];
 
                 team1.forEach((char, idx) => {
                     char.velX = p1MoveX;
 
                     if (p1JumpAction) {
-                        // 스틸 범위 판정
                         if (ballState.startsWith("p2")) {
                             let targetIdx = ballState.split("_")[1];
                             let targetChar = team2[targetIdx];
@@ -278,29 +279,26 @@
                         if (char.isGrounded) {
                             char.velY = 9.5 + (idx * 0.4);
                             char.isGrounded = false;
-                            char.hasShotInAir = false; // 공중 상태 초기화
+                            char.hasShotInAir = false;
                         }
                     }
 
-                    // 💡 핵심 수정: 공을 갖고 수직 도약했을 때 공이 손에 끼지 않고 확실하게 나가도록 처리
+                    // 공중에 있고 공을 들고 있다면 확정 발사
                     if (!char.isGrounded && ballState === `p1_${idx}` && !char.hasShotInAir) {
-                        // 점프 후 위로 약간 솟구친 타이밍에 자동으로 공을 밀어 던짐
-                        if (char.velY > 0) {
-                            char.hasShotInAir = true;
-                            fireShoot(1);
-                        }
+                        char.hasShotInAir = true;
+                        fireShoot(1);
                     }
                 });
 
-                // --- 2P 레드팀 제어 ---
+                // --- 2P 레드팀 제어 (ArrowLeft, ArrowRight = 좌우 / ArrowUp = 점프+슛) ---
                 if (gameMode === 2) {
                     let p2MoveX = 0;
-                    if (keys['arrowleft']) p2MoveX = -moveSpeed;
-                    if (keys['arrowright']) p2MoveX = moveSpeed;
+                    if (keys['ArrowLeft']) p2MoveX = -moveSpeed;
+                    if (keys['ArrowRight']) p2MoveX = moveSpeed;
 
                     let p2JumpAction = false;
-                    if (keys['arrowup'] && !prevKeys['arrowup']) p2JumpAction = true;
-                    prevKeys['arrowup'] = keys['arrowup'];
+                    if (keys['ArrowUp'] && !prevKeys['ArrowUp']) p2JumpAction = true;
+                    prevKeys['ArrowUp'] = keys['ArrowUp'];
 
                     team2.forEach((char, idx) => {
                         char.velX = p2MoveX;
@@ -322,21 +320,19 @@
                         }
 
                         if (!char.isGrounded && ballState === `p2_${idx}` && !char.hasShotInAir) {
-                            if (char.velY > 0) {
-                                char.hasShotInAir = true;
-                                fireShoot(-1);
-                            }
+                            char.hasShotInAir = true;
+                            fireShoot(-1);
                         }
                     });
                 } else {
-                    // --- AI 컴퓨터 모드 ---
+                    // --- AI 모드 ---
                     team2.forEach((char, idx) => {
                         char.velX = 0;
                         if (ball.position.x < char.root.position.x - 0.2) char.velX = -moveSpeed * 0.85;
                         if (ball.position.x > char.root.position.x + 0.2) char.velX = moveSpeed * 0.85;
 
                         let aiJump = Math.random() < 0.04;
-                        if (ballState === `p2_${idx}`) aiJump = true; 
+                        if (ballState === `p2_${idx}`) aiJump = true;
 
                         if (aiJump && char.isGrounded) {
                             if (ballState.startsWith("p1")) {
@@ -359,7 +355,6 @@
                 }
             }
 
-            // 앞뒤 흔들림(2D Wobble) 물리 함수
             function updatePhysics(char) {
                 char.root.position.x += char.velX * dt;
 
@@ -371,7 +366,6 @@
 
                     char.angle = Math.sin(time) * 0.7;
                     char.wobblePivot.rotation.z = char.angle;
-
                     char.armGroup.rotation.z = char.isForward ? Math.PI * 0.5 + char.angle : -Math.PI * 0.5 + char.angle;
                 } else {
                     char.angle = Math.sin(time * 0.6) * 0.25;
@@ -391,60 +385,62 @@
             function animate() {
                 requestAnimationFrame(animate);
 
-                processInputs();
-                team1.forEach(updatePhysics);
-                team2.forEach(updatePhysics);
+                if (gameStarted) {
+                    processInputs();
+                    team1.forEach(updatePhysics);
+                    team2.forEach(updatePhysics);
 
-                if (currentGoalType === "Moving") {
-                    goalMoveTimer += dt * 2.5;
-                    const offset = Math.sin(goalMoveTimer) * 1.5;
-                    leftGoalGroup.position.y = offset > 0 ? offset : 0;
-                    rightGoalGroup.position.y = offset < 0 ? -offset : 0;
-                } else {
-                    leftGoalGroup.position.y = 0; rightGoalGroup.position.y = 0;
-                }
-
-                if (ballState === "free") {
-                    let bGrav = gravity;
-                    if(currentBallType === "Bowling") bGrav *= 1.8;
-                    ballVel.y += bGrav * dt; ball.position.x += ballVel.x * dt; ball.position.y += ballVel.y * dt;
-
-                    let bounce = 0.75; if(currentBallType === "Bowling") bounce = 0.15;
-                    if (ball.position.y <= 0.32) {
-                        ball.position.y = 0.32; ballVel.y = -ballVel.y * bounce; ballVel.x *= 0.95;
+                    if (currentGoalType === "Moving") {
+                        goalMoveTimer += dt * 2.5;
+                        const offset = Math.sin(goalMoveTimer) * 1.5;
+                        leftGoalGroup.position.y = offset > 0 ? offset : 0;
+                        rightGoalGroup.position.y = offset < 0 ? -offset : 0;
+                    } else {
+                        leftGoalGroup.position.y = 0; rightGoalGroup.position.y = 0;
                     }
-                    if (Math.abs(ball.position.x) > 12.2) ballVel.x = -ballVel.x * 0.75;
 
-                    team1.forEach((c, idx) => {
-                        if (ball.position.distanceTo(c.root.position.clone().add(new THREE.Vector3(0,1.8,0))) < 1.8) ballState = `p1_${idx}`;
-                    });
-                    team2.forEach((c, idx) => {
-                        if (ball.position.distanceTo(c.root.position.clone().add(new THREE.Vector3(0,1.8,0))) < 1.8) ballState = `p2_${idx}`;
-                    });
+                    if (ballState === "free") {
+                        let bGrav = gravity;
+                        if(currentBallType === "Bowling") bGrav *= 1.8;
+                        ballVel.y += bGrav * dt; ball.position.x += ballVel.x * dt; ball.position.y += ballVel.y * dt;
 
-                } else {
-                    let side = ballState.startsWith("p1") ? 1 : -1;
-                    let idx = ballState.split("_")[1];
-                    let owner = side === 1 ? team1[idx] : team2[idx];
-                    
-                    let radius = 1.0; 
-                    let theta = owner.angle + (side === 1 ? Math.PI/4 : -Math.PI/4);
-                    let offsetX = Math.sin(theta) * radius;
-                    let offsetY = Math.cos(theta) * radius;
+                        let bounce = 0.75; if(currentBallType === "Bowling") bounce = 0.15;
+                        if (ball.position.y <= 0.32) {
+                            ball.position.y = 0.32; ballVel.y = -ballVel.y * bounce; ballVel.x *= 0.95;
+                        }
+                        if (Math.abs(ball.position.x) > 12.2) ballVel.x = -ballVel.x * 0.75;
 
-                    ball.position.set(owner.root.position.x + offsetX, owner.root.position.y + 1.8 + offsetY, 0);
-                    ballVel.set(0,0,0);
-                }
+                        team1.forEach((c, idx) => {
+                            if (ball.position.distanceTo(c.root.position.clone().add(new THREE.Vector3(0,1.8,0))) < 1.8) ballState = `p1_${idx}`;
+                        });
+                        team2.forEach((c, idx) => {
+                            if (ball.position.distanceTo(c.root.position.clone().add(new THREE.Vector3(0,1.8,0))) < 1.8) ballState = `p2_${idx}`;
+                        });
 
-                const leftRimPos = leftGoalGroup.position.clone().add(leftRim.position);
-                const rightRimPos = rightGoalGroup.position.clone().add(rightRim.position);
-                let scoreRad = currentGoalType === "Mini" ? 0.36 : (currentGoalType === "Giant" ? 0.8 : 0.5);
+                    } else {
+                        let side = ballState.startsWith("p1") ? 1 : -1;
+                        let idx = ballState.split("_")[1];
+                        let owner = side === 1 ? team1[idx] : team2[idx];
+                        
+                        let radius = 1.0; 
+                        let theta = owner.angle + (side === 1 ? Math.PI/4 : -Math.PI/4);
+                        let offsetX = Math.sin(theta) * radius;
+                        let offsetY = Math.cos(theta) * radius;
 
-                if (ball.position.distanceTo(leftRimPos) < scoreRad && ballVel.y < 0) {
-                    p2Score++; document.getElementById('p2-score').innerText = p2Score; resetRound();
-                }
-                if (ball.position.distanceTo(rightRimPos) < scoreRad && ballVel.y < 0) {
-                    p1Score++; document.getElementById('p1-score').innerText = p1Score; resetRound();
+                        ball.position.set(owner.root.position.x + offsetX, owner.root.position.y + 1.8 + offsetY, 0);
+                        ballVel.set(0,0,0);
+                    }
+
+                    const leftRimPos = leftGoalGroup.position.clone().add(leftRim.position);
+                    const rightRimPos = rightGoalGroup.position.clone().add(rightRim.position);
+                    let scoreRad = currentGoalType === "Mini" ? 0.36 : (currentGoalType === "Giant" ? 0.8 : 0.5);
+
+                    if (ball.position.distanceTo(leftRimPos) < scoreRad && ballVel.y < 0) {
+                        p2Score++; document.getElementById('p2-score').innerText = p2Score; resetRound();
+                    }
+                    if (ball.position.distanceTo(rightRimPos) < scoreRad && ballVel.y < 0) {
+                        p1Score++; document.getElementById('p1-score').innerText = p1Score; resetRound();
+                    }
                 }
 
                 renderer.render(scene, camera);
