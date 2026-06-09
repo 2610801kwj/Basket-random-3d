@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basket Random 3D - Air Boss Update</title>
+    <title>Basket Random 3D - Sync Proportions</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #0b0c10; font-family: 'Arial Black', sans-serif; user-select: none; }
         
@@ -53,7 +53,7 @@
 
     <div id="menu">
         <h1>BASKET RANDOM 3D</h1>
-        <p>시즌 2 : 리프 프로그 점프 & 20% 인텐스 틸트 패치</p>
+        <p>시즌 2 : 4인 공통 체형 동기화 & 장외 무승부 패치</p>
         <button class="menu-btn" onclick="startGame(1)">1 PLAYER (vs AI)</button>
         <button class="menu-btn" onclick="startGame(2)" style="background:#2255ff; box-shadow: 0 6px 0 #1133aa;">2 PLAYERS</button>
     </div>
@@ -67,7 +67,7 @@
 
     <div id="game-ui">
         <div id="ui"><span id="p1-score">0</span> : <span id="p2-score">0</span></div>
-        <div id="info-text">라인업 매칭 중...</div>
+        <div id="info-text">동기화 드래프트 중...</div>
         
         <div id="p1-controls" class="control-box">
             <h3 style="color: #6688ff; margin:0 0 8px 0;">Blue Team (1P)</h3>
@@ -186,7 +186,8 @@
             leftRimPos = makeNet(leftGoalGroup, true); rightRimPos = makeNet(rightGoalGroup, false);
         }
 
-        function createPlayer(teamColor, xPos, isForward) {
+        // 🛠️ 공통 체형 옵션을 적용받아 캐릭터를 조립하는 구조로 업그레이드
+        function createPlayer(teamColor, xPos, isForward, headType, armType, legType) {
             const root = new THREE.Group();
             root.position.set(xPos, 0, 0);
             scene.add(root);
@@ -194,17 +195,12 @@
             const pivot = new THREE.Group();
             root.add(pivot);
 
+            // 사람 같은 다양성: 인종 피부톤 및 헤어는 개별 랜덤 유지
             const skinColors = [0xffe0bd, 0xffd1a4, 0xe0ac69, 0xc68642, 0x4a2f13];
             const chosenSkin = skinColors[Math.floor(Math.random() * skinColors.length)];
 
-            const sizes = { "basic": 1.0, "small": 0.75, "short": 0.75, "big": 1.35, "long": 1.35 };
-            const headOptions = ["basic", "small", "big"];
-            const armOptions = ["basic", "short", "long"];
-            const legOptions = ["basic", "short", "long"];
-
-            const headType = headOptions[Math.floor(Math.random() * 3)];
-            const armType = armOptions[Math.floor(Math.random() * 3)];
-            const legType = legOptions[Math.floor(Math.random() * 3)];
+            // 🛠️ 스케일 대비 효과 대폭 확대 세팅 (눈에 더 잘 띄게 변경)
+            const sizes = { "basic": 1.0, "small": 0.45, "short": 0.45, "big": 1.8, "long": 1.8 };
 
             const headScale = sizes[headType];
             const armScale = sizes[armType];
@@ -266,6 +262,7 @@
         let ballOwner = null; 
         let pickupCooldown = 0; let stealCooldown = 0; 
         let p1Score = 0, p2Score = 0;
+        let isTransitioning = false; // 무승부 중복 처리 방지용 플래그
         
         let currentGoalType = "Normal";
         let currentBallType = "Basketball";
@@ -273,26 +270,37 @@
         let goalMoveTimer = 0;
 
         function resetRound() {
+            isTransitioning = false;
             team1.forEach(p => scene.remove(p.root));
             team2.forEach(p => scene.remove(p.root));
             
-            team1 = [createPlayer(0x2255ff, -2.6, true), createPlayer(0x0033bb, -5.5, false)];
-            team2 = [createPlayer(0xff3333, 2.6, true), createPlayer(0xbb0000, 6.5, false)];
+            // 🛠️ 다음 라운드 진입 시 전 선수에게 공통 적용할 단일 랜덤 옵션 세팅
+            const headOptions = ["basic", "small", "big"];
+            const armOptions = ["basic", "short", "long"];
+            const legOptions = ["basic", "short", "long"];
+
+            const roundHead = headOptions[Math.floor(Math.random() * 3)];
+            const roundArm = armOptions[Math.floor(Math.random() * 3)];
+            const roundLeg = legOptions[Math.floor(Math.random() * 3)];
+            
+            // 네 선수 모두에게 공통 데이터 주입
+            team1 = [
+                createPlayer(0x2255ff, -2.6, true, roundHead, roundArm, roundLeg), 
+                createPlayer(0x0033bb, -5.5, false, roundHead, roundArm, roundLeg)
+            ];
+            team2 = [
+                createPlayer(0xff3333, 2.6, true, roundHead, roundArm, roundLeg), 
+                createPlayer(0xbb0000, 6.5, false, roundHead, roundArm, roundLeg)
+            ];
 
             const bTypes = ["Basketball", "Soccer", "Bowling", "Rainbow"];
             currentBallType = bTypes[Math.floor(Math.random() * bTypes.length)];
-            
             ballMaterial.metalness = 0.0; ballMaterial.roughness = 0.3;
 
-            if(currentBallType === "Rainbow") {
-                ballMaterial.color.setHex(0xffffff);
-            } else if(currentBallType === "Soccer") {
-                ballMaterial.color.setHex(0xffffff);
-            } else if(currentBallType === "Bowling") {
-                ballMaterial.color.setHex(0x5a6075); ballMaterial.metalness = 0.8; ballMaterial.roughness = 0.05;
-            } else {
-                ballMaterial.color.setHex(0xff6600);
-            }
+            if(currentBallType === "Rainbow") ballMaterial.color.setHex(0xffffff);
+            else if(currentBallType === "Soccer") ballMaterial.color.setHex(0xffffff);
+            else if(currentBallType === "Bowling") { ballMaterial.color.setHex(0x5a6075); ballMaterial.metalness = 0.8; ballMaterial.roughness = 0.05; }
+            else ballMaterial.color.setHex(0xff6600);
 
             const gTypes = ["Normal", "Mini", "Giant", "Moving"];
             currentGoalType = gTypes[Math.floor(Math.random() * gTypes.length)];
@@ -301,20 +309,13 @@
             const mapStyles = ["Normal", "Ice", "Mud"];
             currentCourtType = mapStyles[Math.floor(Math.random() * mapStyles.length)];
             
-            if(currentCourtType === "Ice") {
-                courtMaterial.color.setHex(0xa3e5ff); courtMaterial.roughness = 0.02;
-                scene.background.setHex(0x0a141d);
-            } else if(currentCourtType === "Mud") {
-                courtMaterial.color.setHex(0x6e503b); courtMaterial.roughness = 0.9;
-                scene.background.setHex(0x14100d);
-            } else {
-                courtMaterial.color.setHex(0xf09351); courtMaterial.roughness = 0.3;
-                scene.background.setHex(0x11131c);
-            }
+            if(currentCourtType === "Ice") { courtMaterial.color.setHex(0xa3e5ff); courtMaterial.roughness = 0.02; scene.background.setHex(0x0a141d); }
+            else if(currentCourtType === "Mud") { courtMaterial.color.setHex(0x6e503b); courtMaterial.roughness = 0.9; scene.background.setHex(0x14100d); }
+            else { courtMaterial.color.setHex(0xf09351); courtMaterial.roughness = 0.3; scene.background.setHex(0x11131c); }
 
-            let ballNameKo = {"Basketball":"농구공", "Soccer":"축구공", "Bowling":"볼링공", "Rainbow":"🌈무지개공(2점)"}[currentBallType];
-            let courtNameKo = {"Normal":"일반 체육관", "Ice":"🥶얼음판", "Mud":"💩진흙탕"}[currentCourtType];
-            document.getElementById('info-text').innerText = `공: ${ballNameKo} | 맵: ${courtNameKo}`;
+            let hKo = {"basic":"보통머리", "small":"초소두👶", "big":"왕대두💀"}[roundHead];
+            let lKo = {"basic":"보통다리", "short":"숏다리덩치", "long":"롱다리거인🏃"}[roundLeg];
+            document.getElementById('info-text').innerText = `라운드 매치업 체형: [${hKo} + ${lKo}]`;
             
             ball.position.set(0, 6.0, 0);
             ballVel.set((Math.random() - 0.5) * 3, 3.5, 0);
@@ -322,11 +323,8 @@
         }
 
         function shoot(player, dirSign) {
-            ballOwner = null;
-            pickupCooldown = 0.4; 
-            
+            ballOwner = null; pickupCooldown = 0.4; 
             let powerX = 14.8; let powerY = 9.8;
-            
             if(currentBallType === "Bowling") { powerX = 10.2; powerY = 6.8; } 
             if(currentBallType === "Soccer") { powerX = 17.5; powerY = 12.0; } 
             if(currentBallType === "Rainbow") { powerX = 15.8; powerY = 10.5; } 
@@ -334,12 +332,10 @@
             if(currentGoalType === "Mini") { powerX *= 0.93; powerY *= 0.94; } 
             else if(currentGoalType === "Giant") { powerX *= 1.06; powerY *= 1.12; } 
             else if(currentGoalType === "Moving") { powerY *= 1.05; }
-
             ballVel.set(dirSign * powerX, powerY, 0);
         }
 
-        let jumpPower = 13.6; 
-        const gravity = -24.0; const dt = 0.016; let moveSpeed = 5.2;
+        let jumpPower = 13.6; const gravity = -24.0; const dt = 0.016; let moveSpeed = 5.2;
 
         function processInputs() {
             moveSpeed = 5.4; jumpPower = 13.6;
@@ -356,10 +352,7 @@
                     if (ballOwner === p) shoot(p, 1);
                 });
             }
-            team1.forEach(p => {
-                if(currentCourtType === "Ice") p.velX += (p1TargetVelX - p.velX) * 0.06;
-                else p.velX = p1TargetVelX;
-            });
+            team1.forEach(p => { if(currentCourtType === "Ice") p.velX += (p1TargetVelX - p.velX) * 0.06; else p.velX = p1TargetVelX; });
 
             if (gameMode === 2) {
                 let p2TargetVelX = 0;
@@ -373,18 +366,13 @@
                         if (ballOwner === p) shoot(p, -1);
                     });
                 }
-                team2.forEach(p => {
-                    if(currentCourtType === "Ice") p.velX += (p2TargetVelX - p.velX) * 0.06;
-                    else p.velX = p2TargetVelX;
-                });
+                team2.forEach(p => { if(currentCourtType === "Ice") p.velX += (p2TargetVelX - p.velX) * 0.06; else p.velX = p2TargetVelX; });
             } else {
                 team2.forEach(p => {
                     let aiTargetX = 0;
                     if (ball.position.x < p.root.position.x - 0.2) aiTargetX = -moveSpeed * 0.8;
                     if (ball.position.x > p.root.position.x + 0.2) aiTargetX = moveSpeed * 0.8;
-                    
-                    if(currentCourtType === "Ice") p.velX += (aiTargetX - p.velX) * 0.06;
-                    else p.velX = aiTargetX;
+                    if(currentCourtType === "Ice") p.velX += (aiTargetX - p.velX) * 0.06; else p.velX = aiTargetX;
 
                     if (Math.random() < 0.025 && p.isGrounded) {
                         p.velY = jumpPower * 0.95; p.isGrounded = false;
@@ -399,25 +387,17 @@
             let time = Date.now() * 0.006 + p.offset;
 
             if (!p.isGrounded) {
-                p.velY += gravity * dt;
-                p.root.position.y += p.velY * dt;
-                
-                // 🛠️ 공중 흔들림 각도 20% 강화 (기존 0.45 -> 0.54 상향)
-                p.targetRotZ = Math.sin(time) * 0.54;
+                p.velY += gravity * dt; p.root.position.y += p.velY * dt;
+                p.targetRotZ = Math.sin(time) * 0.54; // 앞뒤 흔들림 20% 강화 유지
                 p.targetLegRot = 0.5;
-                p.arm.rotation.z = p.isForward ? Math.PI * 0.4 : -Math.PI * 0.4;
-                p.bodyBob = 0;
+                p.arm.rotation.z = p.isForward ? Math.PI * 0.4 : -Math.PI * 0.4; p.bodyBob = 0;
             } else {
                 if (Math.abs(p.velX) > 0.4) {
-                    // 🛠️ 지상 대시 상체 숙임 각도 20% 강화 (기존 0.15 -> 0.18 상향)
-                    p.targetRotZ = (p.velX > 0 ? 0.18 : -0.18); 
-                    p.targetLegRot = Math.sin(time * 1.6) * 0.65;
-                    p.arm.rotation.z = Math.sin(time) * 0.35;
+                    p.targetRotZ = (p.velX > 0 ? 0.18 : -0.18); // 대시 기우뚱 20% 강화 유지
+                    p.targetLegRot = Math.sin(time * 1.6) * 0.65; p.arm.rotation.z = Math.sin(time) * 0.35;
                     p.bodyBob = Math.abs(Math.sin(time * 2.0)) * 0.08; 
                 } else {
-                    p.targetRotZ = 0; p.targetLegRot = 0;
-                    p.arm.rotation.z = Math.sin(time * 0.3) * 0.1;
-                    p.bodyBob = 0;
+                    p.targetRotZ = 0; p.targetLegRot = 0; p.arm.rotation.z = Math.sin(time * 0.3) * 0.1; p.bodyBob = 0;
                 }
             }
 
@@ -431,41 +411,27 @@
             if (p.root.position.x > 11.5) p.root.position.x = 11.5;
         }
 
-        // 🛠️ 에어 점프 오버가 가능하도록 Y축 판정 결합형 충돌 모듈 고도화
         function resolveCollisions() {
             if(team1.length < 2 || team2.length < 2) return;
-            
-            const heightLimit = 1.3; // 이 높이차 이상 나면 충돌을 무시하고 스쳐 넘어감
+            const heightLimit = 1.3;
 
-            // 1. 팀1 내부 충돌 판정
             let diffT1 = team1[0].root.position.x - team1[1].root.position.x;
             let dyT1 = Math.abs(team1[0].root.position.y - team1[1].root.position.y);
             if (Math.abs(diffT1) < 1.8 && dyT1 < heightLimit) {
-                let overlap = 1.8 - Math.abs(diffT1);
-                team1[0].root.position.x += overlap * 0.5; team1[1].root.position.x -= overlap * 0.5;
+                let overlap = 1.8 - Math.abs(diffT1); team1[0].root.position.x += overlap * 0.5; team1[1].root.position.x -= overlap * 0.5;
             }
-
-            // 2. 팀2 내부 충돌 판정
             let diffT2 = team2[1].root.position.x - team2[0].root.position.x;
             let dyT2 = Math.abs(team2[1].root.position.y - team2[0].root.position.y);
             if (Math.abs(diffT2) < 1.8 && dyT2 < heightLimit) {
-                let overlap = 1.8 - Math.abs(diffT2);
-                team2[0].root.position.x -= overlap * 0.5; team2[1].root.position.x += overlap * 0.5;
+                let overlap = 1.8 - Math.abs(diffT2); team2[0].root.position.x -= overlap * 0.5; team2[1].root.position.x += overlap * 0.5;
             }
-
-            // 3. 전 선수 대상 1:1 몸싸움 및 교차 뛰어넘기 판정
             const all = [...team1, ...team2];
             for (let i = 0; i < all.length; i++) {
                 for (let j = i + 1; j < all.length; j++) {
-                    let pA = all[i]; let pB = all[j];
-                    let dx = pA.root.position.x - pB.root.position.x;
-                    let dy = Math.abs(pA.root.position.y - pB.root.position.y);
-                    
+                    let pA = all[i]; let pB = all[j]; let dx = pA.root.position.x - pB.root.position.x; let dy = Math.abs(pA.root.position.y - pB.root.position.y);
                     let minDist = 0.65;
-                    // X축이 겹치더라도 Y축 높이 차이가 heightLimit 미만일 때만 수평으로 밀어냄
                     if (Math.abs(dx) < minDist && dy < heightLimit) {
-                        let overlap = minDist - Math.abs(dx);
-                        let sign = dx > 0 ? 1 : -1;
+                        let overlap = minDist - Math.abs(dx); let sign = dx > 0 ? 1 : -1;
                         pA.root.position.x += sign * overlap * 0.5; pB.root.position.x -= sign * overlap * 0.5;
                     }
                 }
@@ -476,98 +442,77 @@
             requestAnimationFrame(animate);
             
             if (gameStarted) {
-                processInputs();
-                team1.forEach(updatePhysics);
-                team2.forEach(updatePhysics);
-                resolveCollisions();
+                processInputs(); team1.forEach(updatePhysics); team2.forEach(updatePhysics); resolveCollisions();
 
-                if (currentBallType === "Rainbow") {
-                    let hue = (Date.now() * 0.001) % 1;
-                    ballMaterial.color.setHSL(hue, 1.0, 0.5);
-                }
+                if (currentBallType === "Rainbow") { let hue = (Date.now() * 0.001) % 1; ballMaterial.color.setHSL(hue, 1.0, 0.5); }
 
                 if (currentGoalType === "Moving") {
-                    goalMoveTimer += dt * 3;
-                    const offset = Math.sin(goalMoveTimer) * 1.5;
-                    leftGoalGroup.position.y = offset > 0 ? offset : 0;
-                    rightGoalGroup.position.y = offset < 0 ? -offset : 0;
-                } else {
-                    leftGoalGroup.position.y = 0; rightGoalGroup.position.y = 0;
-                }
+                    goalMoveTimer += dt * 3; const offset = Math.sin(goalMoveTimer) * 1.5;
+                    leftGoalGroup.position.y = offset > 0 ? offset : 0; rightGoalGroup.position.y = offset < 0 ? -offset : 0;
+                } else { leftGoalGroup.position.y = 0; rightGoalGroup.position.y = 0; }
 
                 if (stealCooldown > 0) stealCooldown -= dt;
 
                 if (ballOwner === null) {
                     let bGrav = gravity;
-                    if(currentBallType === "Bowling") bGrav *= 1.6;
-                    else if(currentBallType === "Soccer") bGrav *= 0.75;
+                    if(currentBallType === "Bowling") bGrav *= 1.6; else if(currentBallType === "Soccer") bGrav *= 0.75;
 
-                    ballVel.y += bGrav * dt;
-                    ball.position.x += ballVel.x * dt;
-                    ball.position.y += ballVel.y * dt;
+                    ballVel.y += bGrav * dt; ball.position.x += ballVel.x * dt; ball.position.y += ballVel.y * dt;
 
                     let bounce = 0.75;
-                    if(currentBallType === "Bowling") bounce = 0.15;
-                    if(currentBallType === "Soccer") bounce = 0.92;
+                    if(currentBallType === "Bowling") bounce = 0.15; if(currentBallType === "Soccer") bounce = 0.92;
 
-                    if (ball.position.y <= 0.3) {
-                        ball.position.y = 0.3; ballVel.y = -ballVel.y * bounce; ballVel.x *= 0.96;
+                    if (ball.position.y <= 0.3) { ball.position.y = 0.3; ballVel.y = -ballVel.y * bounce; ballVel.x *= 0.96; }
+
+                    // 🛠️ 골대 바깥 장외 무승부 트리거 검사 (골대 뒤 장외 벽면 돌파 시 발생)
+                    if (Math.abs(ball.position.x) > 12.2 && !isTransitioning) {
+                        isTransitioning = true;
+                        document.getElementById('info-text').innerText = "🏳️ 장외 폴트! 무승부 (DRAW) - 라운드 재조립";
+                        setTimeout(resetRound, 1200); // 1.2초 대기 후 체형 전원 리롤 및 리셋
                     }
-                    if (Math.abs(ball.position.x) > 12.0) ballVel.x = -ballVel.x * 0.7;
 
-                    if (pickupCooldown > 0) {
-                        pickupCooldown -= dt;
-                    } else {
+                    if (pickupCooldown > 0) { pickupCooldown -= dt; } else {
                         const checkPickup = (p) => {
                             let pPos = p.root.position.clone().add(new THREE.Vector3(0, p.centerH, 0));
                             if (ball.position.distanceTo(pPos) < 1.3) { ballOwner = p; }
                         };
-                        team1.forEach(checkPickup); team2.forEach(checkPickup);
+                        if(!isTransitioning) { team1.forEach(checkPickup); team2.forEach(checkPickup); }
                     }
                 } else {
                     const opponents = team1.includes(ballOwner) ? team2 : team1;
                     if (stealCooldown <= 0) {
                         opponents.forEach(p => {
                             let pPos = p.root.position.clone().add(new THREE.Vector3(0, p.centerH, 0));
-                            if (ball.position.distanceTo(pPos) < 1.1) {
-                                ballOwner = p; stealCooldown = 0.2; 
-                            }
+                            if (ball.position.distanceTo(pPos) < 1.1) { ballOwner = p; stealCooldown = 0.2; }
                         });
                     }
                     let side = team1.includes(ballOwner) ? 1 : -1;
-                    ball.position.set(ballOwner.root.position.x + (side * 0.45), ballOwner.root.position.y + ballOwner.centerH + 0.1, 0);
-                    ballVel.set(0, 0, 0);
+                    ball.position.set(ballOwner.root.position.x + (side * 0.45), ballOwner.root.position.y + ballOwner.centerH + 0.1, 0); ballVel.set(0, 0, 0);
                 }
 
+                // 골대 림 내부 득점 트리거
                 const worldLeftRim = leftGoalGroup.position.clone().add(leftRimPos);
                 const worldRightRim = rightGoalGroup.position.clone().add(rightRimPos);
-
                 let pointsToGive = (currentBallType === "Rainbow") ? 2 : 1;
 
-                if (ball.position.distanceTo(worldLeftRim) < rimRadius + 0.1 && ballVel.y < 0) {
+                if (!isTransitioning && ball.position.distanceTo(worldLeftRim) < rimRadius + 0.1 && ballVel.y < 0) {
                     p2Score += pointsToGive; document.getElementById('p2-score').innerText = p2Score;
                     if(p2Score >= 5) {
-                        gameStarted = false;
-                        document.getElementById('winner-text').innerText = "RED TEAM WINS!";
-                        document.getElementById('game-over').style.display = 'flex';
+                        gameStarted = false; document.getElementById('winner-text').innerText = "RED TEAM WINS!"; document.getElementById('game-over').style.display = 'flex';
                     } else { resetRound(); }
                 }
-                if (ball.position.distanceTo(worldRightRim) < rimRadius + 0.1 && ballVel.y < 0) {
+                if (!isTransitioning && ball.position.distanceTo(worldRightRim) < rimRadius + 0.1 && ballVel.y < 0) {
                     p1Score += pointsToGive; document.getElementById('p1-score').innerText = p1Score;
                     if(p1Score >= 5) {
-                        gameStarted = false;
-                        document.getElementById('winner-text').innerText = "BLUE TEAM WINS!";
-                        document.getElementById('game-over').style.display = 'flex';
+                        gameStarted = false; document.getElementById('winner-text').innerText = "BLUE TEAM WINS!"; document.getElementById('game-over').style.display = 'flex';
                     } else { resetRound(); }
                 }
             }
-
             renderer.render(scene, camera);
         }
 
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight);
         });
         
         resetRound();
