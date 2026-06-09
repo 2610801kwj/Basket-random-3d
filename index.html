@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basket Random 3D - Full Features Restored</title>
+    <title>Basket Random 3D - Shoot Bug Fixed</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #0b0c10; font-family: 'Arial Black', sans-serif; }
         
@@ -46,14 +46,14 @@
 
     <div id="menu">
         <h1>BASKET RANDOM 3D</h1>
-        <p>랜덤 요소 및 슛 물리엔진 완벽 복구 버전</p>
+        <p>랜덤 요소 및 슛 발사 완벽 복구 버전</p>
         <button class="menu-btn" onclick="startGame(1)">1 PLAYER (vs AI)</button>
         <button class="menu-btn" onclick="startGame(2)" style="background:#2255ff; box-shadow: 0 6px 0 #1133aa;">2 PLAYERS</button>
     </div>
 
     <div id="game-ui">
         <div id="ui"><span id="p1-score">0</span> : <span id="p2-score">0</span></div>
-        <div id="info-text" id="round-info">준비!</div>
+        <div id="info-text">준비!</div>
         
         <div id="p1-controls" class="control-box">
             <h3 style="color: #6688ff; margin:0 0 8px 0;">Blue Team (1P)</h3>
@@ -115,7 +115,6 @@
         sunLight.position.set(5, 15, 10);
         scene.add(sunLight);
 
-        // 배경 코트 (랜덤으로 색상이 변할 예정)
         const courtMaterial = new THREE.MeshStandardMaterial({ color: 0xd9742b, roughness: 0.2 });
         const court = new THREE.Mesh(new THREE.BoxGeometry(26, 0.4, 6), courtMaterial);
         court.position.y = -0.2;
@@ -130,7 +129,6 @@
         let leftRimPos = new THREE.Vector3(), rightRimPos = new THREE.Vector3();
         let rimRadius = 0.42;
 
-        // 골대 생성 함수 (랜덤 기믹을 위해 크기 조절 가능)
         function buildGoals(type) {
             while(leftGoalGroup.children.length > 0) leftGoalGroup.remove(leftGoalGroup.children[0]);
             while(rightGoalGroup.children.length > 0) rightGoalGroup.remove(rightGoalGroup.children[0]);
@@ -188,16 +186,15 @@
         scene.add(ball);
 
         let ballVel = new THREE.Vector3();
-        let ballOwner = null; // 공 소유자를 명확히 추적
+        let ballOwner = null; 
+        let pickupCooldown = 0; // 🚀 새로 추가된 쿨다운 변수
         let p1Score = 0, p2Score = 0;
         
         let currentGoalType = "Normal";
         let currentBallType = "Basketball";
         let goalMoveTimer = 0;
 
-        // 매 라운드마다 랜덤으로 요소 변경
         function resetRound() {
-            // 랜덤 공 설정
             const bTypes = ["Basketball", "Soccer", "Bowling", "Gold"];
             currentBallType = bTypes[Math.floor(Math.random() * bTypes.length)];
             
@@ -206,12 +203,10 @@
             else if(currentBallType === "Bowling") ballMaterial.color.setHex(0x111122);
             else ballMaterial.color.setHex(0xff6600);
 
-            // 랜덤 골대 설정
             const gTypes = ["Normal", "Mini", "Giant", "Moving"];
             currentGoalType = gTypes[Math.floor(Math.random() * gTypes.length)];
             buildGoals(currentGoalType === "Moving" ? "Normal" : currentGoalType);
 
-            // 배경색 랜덤 변경
             const colors = [0xd9742b, 0x44aa44, 0x4444aa, 0x994499];
             courtMaterial.color.setHex(colors[Math.floor(Math.random() * colors.length)]);
 
@@ -225,17 +220,20 @@
             ball.position.set(0, 6.0, 0);
             ballVel.set((Math.random() - 0.5) * 3, 3.5, 0);
             ballOwner = null;
+            pickupCooldown = 0;
         }
         resetRound();
 
-        // 가장 중요한 슛 함수: W나 화살표 위를 누르면 즉시 발사됨
+        // 🚀 버그 해결: 슛을 쏘면 즉시 소유권을 풀고 0.3초간 쿨다운 부여
         function shoot(player, dirSign) {
             ballOwner = null;
+            pickupCooldown = 0.3; // 0.3초 동안 다시 잡지 못하게 설정
+            
             let powerX = 14.5;
             let powerY = 9.5;
             
-            if(currentBallType === "Bowling") { powerX = 9.0; powerY = 6.0; } // 볼링공은 무거움
-            if(currentBallType === "Soccer") { powerX = 16.0; powerY = 11.0; } // 축구공은 가벼움
+            if(currentBallType === "Bowling") { powerX = 9.0; powerY = 6.0; }
+            if(currentBallType === "Soccer") { powerX = 16.0; powerY = 11.0; }
 
             ballVel.set(dirSign * powerX, powerY, 0);
         }
@@ -243,7 +241,6 @@
         const gravity = -22.0; const dt = 0.016; const moveSpeed = 5.2;
 
         function processInputs() {
-            // --- 1P 컨트롤 ---
             let p1MoveX = 0;
             if (keys['a']) p1MoveX = -moveSpeed;
             if (keys['d']) p1MoveX = moveSpeed;
@@ -251,15 +248,12 @@
             if (keys['w'] && !prevKeys['w']) {
                 prevKeys['w'] = true;
                 team1.forEach(p => {
-                    // W 누르면 무조건 점프
                     if (p.isGrounded) { p.velY = 10.5; p.isGrounded = false; }
-                    // 공을 들고 있으면 무조건 슛 발사
                     if (ballOwner === p) shoot(p, 1);
                 });
             }
             team1.forEach(p => p.velX = p1MoveX);
 
-            // --- 2P & AI 컨트롤 ---
             if (gameMode === 2) {
                 let p2MoveX = 0;
                 if (keys['arrowleft']) p2MoveX = -moveSpeed;
@@ -291,7 +285,6 @@
             p.root.position.x += p.velX * dt;
             let time = Date.now() * 0.006 + p.offset;
 
-            // 흐느적거리는 원작 관절 연산
             if (!p.isGrounded) {
                 p.velY += gravity * dt;
                 p.root.position.y += p.velY * dt;
@@ -315,7 +308,6 @@
                 team1.forEach(updatePhysics);
                 team2.forEach(updatePhysics);
 
-                // 무빙 골대 모드 연산
                 if (currentGoalType === "Moving") {
                     goalMoveTimer += dt * 3;
                     const offset = Math.sin(goalMoveTimer) * 1.5;
@@ -343,22 +335,24 @@
                     }
                     if (Math.abs(ball.position.x) > 12.0) ballVel.x = -ballVel.x * 0.7;
 
-                    // 플레이어가 공 근처에 가면 획득
-                    const checkPickup = (p) => {
-                        if (ball.position.distanceTo(p.root.position.clone().add(new THREE.Vector3(0, 1.4, 0))) < 1.4) {
-                            ballOwner = p;
-                        }
-                    };
-                    team1.forEach(checkPickup);
-                    team2.forEach(checkPickup);
+                    // 🚀 쿨다운이 없을 때만 공을 잡을 수 있게 보호
+                    if (pickupCooldown > 0) {
+                        pickupCooldown -= dt;
+                    } else {
+                        const checkPickup = (p) => {
+                            if (ball.position.distanceTo(p.root.position.clone().add(new THREE.Vector3(0, 1.4, 0))) < 1.4) {
+                                ballOwner = p;
+                            }
+                        };
+                        team1.forEach(checkPickup);
+                        team2.forEach(checkPickup);
+                    }
                 } else {
-                    // 공을 들고 있을 때 캐릭터 앞에 고정
                     let side = team1.includes(ballOwner) ? 1 : -1;
                     ball.position.set(ballOwner.root.position.x + (side * 0.45), ballOwner.root.position.y + 1.5, 0);
                     ballVel.set(0, 0, 0);
                 }
 
-                // 득점 판정 (실제 림 위치 기준)
                 const worldLeftRim = leftGoalGroup.position.clone().add(leftRimPos);
                 const worldRightRim = rightGoalGroup.position.clone().add(rightRimPos);
 
