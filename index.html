@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Basket Random - Wobble & Push Edition</title>
+    <title>3D Basket Random - Perfect Release Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #05050f; font-family: 'Arial Black', sans-serif; }
         
@@ -51,7 +51,7 @@
 
     <div id="menu">
         <h1>BASKET RANDOM 3D</h1>
-        <p>WOBBLE MOTION & FORWARD SHOOT</p>
+        <p>RE-TUNED SHOOT RELEASE PHYSICS</p>
         <button class="menu-btn" onclick="startGame(1)">1 PLAYER (vs AI)</button>
         <button class="menu-btn" onclick="startGame(2)" style="background:#2255ff; box-shadow: 0 6px 0 #1133aa;">2 PLAYERS</button>
     </div>
@@ -63,14 +63,13 @@
         <div id="p1-controls" class="control-box">
             <h3 style="color: #6688ff;">Blue Team (1P)</h3>
             <div>⬅️ 이동 : <span class="key-badge">A</span> , <span class="key-badge">D</span></div>
-            <div>▲ 점프+앞방향 슛+<b>⚡스틸</b> : <span class="key-badge">W</span></div>
-            <div style="font-size: 11px; color: #ffaa00; margin-top: 5px;">※ 몸이 앞으로 기울어졌을 때 뛰면 슛이 전방으로 강하게 밀려 나갑니다!</div>
+            <div>▲ 점프 / 자동 슛 탈출 : <span class="key-badge">W</span></div>
         </div>
 
         <div id="p2-controls" class="control-box">
             <h3 id="p2-title" style="color: #ff6666;">Red Team (2P)</h3>
             <div>⬅️ 이동 : <span class="key-badge">←</span> , <span class="key-badge">→</span></div>
-            <div>▲ 점프+앞방향 슛+<b>⚡스틸</b> : <span class="key-badge">↑ (Up)</span></div>
+            <div>▲ 점프 / 자동 슛 탈출 : <span class="key-badge">↑ (Up)</span></div>
         </div>
     </div>
 
@@ -136,9 +135,8 @@
                 root.position.set(xPos, 0, 0);
                 scene.add(root);
 
-                // 흔들림 전용 중심 축 그룹 생성
                 const wobblePivot = new THREE.Group();
-                wobblePivot.position.y = 0; // 발바닥 기준 회전
+                wobblePivot.position.y = 0; 
                 root.add(wobblePivot);
 
                 const legs = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.9, 0.32), new THREE.MeshStandardMaterial({ color: 0x222222 }));
@@ -153,7 +151,6 @@
                 head.position.y = 2.25;
                 wobblePivot.add(head);
 
-                // 🦾 롱 암 배치 (어깨 관절)
                 const armGroup = new THREE.Group();
                 armGroup.position.set(isForward ? 0.2 : -0.2, 1.7, 0);
                 wobblePivot.add(armGroup);
@@ -166,10 +163,9 @@
                 shoe.position.set(isForward ? 0.05 : -0.05, 0.09, 0);
                 wobblePivot.add(shoe);
 
-                // 개별 흔들림 타이머 오프셋 무작위 부여
                 let wobbleOffset = Math.random() * 100;
 
-                return { root, wobblePivot, armGroup, color, velY:0, velX:0, isGrounded:true, isForward, wobbleOffset, angle: 0 };
+                return { root, wobblePivot, armGroup, color, velY:0, velX:0, isGrounded:true, isForward, wobbleOffset, angle: 0, hasShotInAir: false };
             }
 
             const team1 = [createCharacter(0x2255ff, -2.8, true), createCharacter(0x0022aa, -6.0, false)];
@@ -233,7 +229,7 @@
                 team2[0].root.position.set(2.5, 0, 0);  team2[1].root.position.set(5.5, 0, 0);
 
                 [...team1, ...team2].forEach(c => {
-                    c.velX = 0; c.velY = 0; c.isGrounded = true;
+                    c.velX = 0; c.velY = 0; c.isGrounded = true; c.hasShotInAir = false;
                     c.wobblePivot.rotation.z = 0; c.armGroup.rotation.z = 0;
                 });
 
@@ -244,21 +240,20 @@
 
             resetRound();
 
-            // 🚀 요구사항 반영: 앞으로 강하게 밀어 던지는 직선형 전방 슛 메커니즘
+            // 🚀 확실하게 전방으로 밀어나가도록 조정한 슛 함수
             function fireShoot(dirSign) {
                 ballState = "free";
-                // 위로 뜨는 힘은 적당히 유지하되, 앞방향(X축) 속도를 대폭 가속 (밀어치기 효과)
-                let powerX = 10.5 + Math.random() * 3.5; 
-                let powerY = 8.0 + Math.random() * 3.0;
+                let powerX = 11.5 + Math.random() * 3.0; // 앞으로 뻗어나가는 힘 강화
+                let powerY = 9.5 + Math.random() * 2.5;  // 포물선 높이 충분히 확보
                 
-                if(currentBallType === "Bowling") { powerX *= 0.7; powerY *= 0.5; }
+                if(currentBallType === "Bowling") { powerX *= 0.6; powerY *= 0.5; }
                 ballVel.set(dirSign * powerX, powerY, 0);
             }
 
             const gravity = -20.0; const dt = 0.016; const moveSpeed = 5.0;
 
             function processInputs() {
-                // --- 1P 블루팀 제어 (A, D 이동 / W 점프+슛) ---
+                // --- 1P 블루팀 제어 ---
                 let p1MoveX = 0;
                 if (keys['a']) p1MoveX = -moveSpeed;
                 if (keys['d']) p1MoveX = moveSpeed;
@@ -271,7 +266,7 @@
                     char.velX = p1MoveX;
 
                     if (p1JumpAction) {
-                        // 스틸 판정 범위 체크
+                        // 스틸 범위 판정
                         if (ballState.startsWith("p2")) {
                             let targetIdx = ballState.split("_")[1];
                             let targetChar = team2[targetIdx];
@@ -281,17 +276,23 @@
                         }
 
                         if (char.isGrounded) {
-                            char.velY = 9.0 + (idx * 0.5);
+                            char.velY = 9.5 + (idx * 0.4);
                             char.isGrounded = false;
+                            char.hasShotInAir = false; // 공중 상태 초기화
                         }
+                    }
 
-                        if (ballState === `p1_${idx}`) {
+                    // 💡 핵심 수정: 공을 갖고 수직 도약했을 때 공이 손에 끼지 않고 확실하게 나가도록 처리
+                    if (!char.isGrounded && ballState === `p1_${idx}` && !char.hasShotInAir) {
+                        // 점프 후 위로 약간 솟구친 타이밍에 자동으로 공을 밀어 던짐
+                        if (char.velY > 0) {
+                            char.hasShotInAir = true;
                             fireShoot(1);
                         }
                     }
                 });
 
-                // --- 2P 레드팀 제어 (Left, Right 이동 / Up 점프+슛) ---
+                // --- 2P 레드팀 제어 ---
                 if (gameMode === 2) {
                     let p2MoveX = 0;
                     if (keys['arrowleft']) p2MoveX = -moveSpeed;
@@ -314,11 +315,15 @@
                             }
 
                             if (char.isGrounded) {
-                                char.velY = 9.0 + (idx * 0.5);
+                                char.velY = 9.5 + (idx * 0.4);
                                 char.isGrounded = false;
+                                char.hasShotInAir = false;
                             }
+                        }
 
-                            if (ballState === `p2_${idx}`) {
+                        if (!char.isGrounded && ballState === `p2_${idx}` && !char.hasShotInAir) {
+                            if (char.velY > 0) {
+                                char.hasShotInAir = true;
                                 fireShoot(-1);
                             }
                         }
@@ -331,9 +336,9 @@
                         if (ball.position.x > char.root.position.x + 0.2) char.velX = moveSpeed * 0.85;
 
                         let aiJump = Math.random() < 0.04;
-                        if (ballState.startsWith("p2")) aiJump = true; 
+                        if (ballState === `p2_${idx}`) aiJump = true; 
 
-                        if (aiJump) {
+                        if (aiJump && char.isGrounded) {
                             if (ballState.startsWith("p1")) {
                                 let targetIdx = ballState.split("_")[1];
                                 let targetChar = team1[targetIdx];
@@ -341,42 +346,38 @@
                                     ballState = `p2_${idx}`;
                                 }
                             }
+                            char.velY = 9.5;
+                            char.isGrounded = false;
+                            char.hasShotInAir = false;
+                        }
 
-                            if (char.isGrounded) {
-                                char.velY = 9.0;
-                                char.isGrounded = false;
-                            }
-
-                            if (ballState === `p2_${idx}`) {
-                                fireShoot(-1);
-                            }
+                        if (!char.isGrounded && ballState === `p2_${idx}` && !char.hasShotInAir) {
+                            char.hasShotInAir = true;
+                            fireShoot(-1);
                         }
                     });
                 }
             }
 
-            // 🤸 핵심 수정: 2D 아케이드 스타일 앞뒤 흔들림(Wobble) 기믹 물리 구현
+            // 앞뒤 흔들림(2D Wobble) 물리 함수
             function updatePhysics(char) {
                 char.root.position.x += char.velX * dt;
 
-                // 시간 경과에 따라 sin 파형을 이용해 주기적으로 앞뒤로 요동치는 회전 각도 계산
                 let time = Date.now() * 0.007 + char.wobbleOffset;
                 
                 if (!char.isGrounded) {
                     char.velY += gravity * dt;
                     char.root.position.y += char.velY * dt;
 
-                    // 공중에 떴을 때는 관성에 의해 더 격렬하게 앞뒤로 요동침 (최대 약 45도)
                     char.angle = Math.sin(time) * 0.7;
                     char.wobblePivot.rotation.z = char.angle;
 
-                    // 만세 포즈 고정 대신, 흔들리는 각도에 맞춰 팔이 자연스럽게 휘둘러짐
                     char.armGroup.rotation.z = char.isForward ? Math.PI * 0.5 + char.angle : -Math.PI * 0.5 + char.angle;
                 } else {
-                    // 바닥에 서 있을 때도 흐느적거리며 미세하게 앞뒤 흔들림 유지
                     char.angle = Math.sin(time * 0.6) * 0.25;
                     char.wobblePivot.rotation.z = char.angle;
-                    char.armGroup.rotation.z = Math.sin(time) * 0.3; // 기본 대기 팔 흔들림
+                    char.armGroup.rotation.z = Math.sin(time) * 0.3;
+                    char.hasShotInAir = false;
                 }
 
                 if (char.root.position.y <= 0) {
@@ -403,7 +404,6 @@
                     leftGoalGroup.position.y = 0; rightGoalGroup.position.y = 0;
                 }
 
-                // 공 물리 물리 갱신
                 if (ballState === "free") {
                     let bGrav = gravity;
                     if(currentBallType === "Bowling") bGrav *= 1.8;
@@ -415,7 +415,6 @@
                     }
                     if (Math.abs(ball.position.x) > 12.2) ballVel.x = -ballVel.x * 0.75;
 
-                    // 캐릭터 손(머리 위쪽 반경) 근처 자석 흡입 판정
                     team1.forEach((c, idx) => {
                         if (ball.position.distanceTo(c.root.position.clone().add(new THREE.Vector3(0,1.8,0))) < 1.8) ballState = `p1_${idx}`;
                     });
@@ -428,7 +427,6 @@
                     let idx = ballState.split("_")[1];
                     let owner = side === 1 ? team1[idx] : team2[idx];
                     
-                    // 💡 공을 잡고 있을 때도 캐릭터가 앞뒤로 흔들리는 각도(owner.angle)를 연산하여 공이 함께 흔들리도록 동기화!
                     let radius = 1.0; 
                     let theta = owner.angle + (side === 1 ? Math.PI/4 : -Math.PI/4);
                     let offsetX = Math.sin(theta) * radius;
