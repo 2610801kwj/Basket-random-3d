@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Basket Random - Control Edition</title>
+    <title>3D Basket Random - Stable Edition</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #222; font-family: 'Arial Black', sans-serif; }
+        body { margin: 0; overflow: hidden; background-color: #111; font-family: 'Arial Black', sans-serif; }
         
         /* 메인 메뉴 */
         #menu {
-            position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.85);
+            position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.9);
             display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100;
         }
-        #menu h1 { color: #fff; font-size: 50px; margin-bottom: 30px; text-shadow: 3px 3px 0px #ff6600; }
+        #menu h1 { color: #fff; font-size: 50px; margin-bottom: 30px; text-shadow: 3px 3px 0px #ff6600; text-align: center; }
         .menu-btn {
             width: 250px; padding: 15px; margin: 10px; font-size: 22px; font-weight: bold;
             color: white; background: #ff6600; border: none; border-radius: 10px; cursor: pointer;
@@ -32,10 +32,10 @@
             color: #fffdd0; font-size: 20px; font-weight: bold; text-shadow: 2px 2px 0px #000; z-index: 10;
         }
 
-        /* 💡 양측 조작 설명창 스타일 */
+        /* 양측 조작 설명창 */
         .control-box {
             position: absolute; bottom: 20px; width: 220px; padding: 15px;
-            background: rgba(0, 0, 0, 0.7); border-radius: 12px; color: white;
+            background: rgba(0, 0, 0, 0.75); border-radius: 12px; color: white;
             font-family: sans-serif; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             z-index: 20; pointer-events: none; line-height: 1.8;
         }
@@ -59,7 +59,7 @@
 
     <div id="game-ui">
         <div id="ui"><span id="p1-score">0</span> : <span id="p2-score">0</span></div>
-        <div id="info-text">라운드 생성 중...</div>
+        <div id="info-text">초기화 중...</div>
         
         <div id="p1-controls" class="control-box">
             <h3 style="color: #6688ff;">Player 1 (Blue)</h3>
@@ -83,45 +83,56 @@
         let gameStarted = false;
         const keys = {};
 
+        // 키 입력 이벤트 등록
+        window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
+        window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
         function startGame(mode) {
             gameMode = mode;
             gameStarted = true;
             document.getElementById('menu').style.display = 'none';
             document.getElementById('game-ui').style.display = 'block';
             
-            // 1인용일 때는 2P 설명창의 제목을 AI로 변경
             if(gameMode === 1) {
                 document.getElementById('p2-title').innerText = "Computer (AI)";
             } else {
                 document.getElementById('p2-title').innerText = "Player 2 (Red)";
             }
 
+            // 라이브러리 체크 후 안전하게 엔진 초기화
+            if (typeof THREE === 'undefined') {
+                alert("엔진 라이브러리를 정상적으로 불러오지 못했습니다. 새로고침을 해주세요.");
+                return;
+            }
             initGame();
         }
 
-        window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
-        window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
-
         function initGame() {
-            if (typeof THREE === 'undefined') return;
-
-            // 1. 기본 시스템 세팅
+            // 1. 시스템 초기화 및 안전 옵션 설정
             const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x70c5ce);
+
             const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.set(0, 4.5, 11);
             camera.lookAt(0, 2.5, 0);
 
-            const renderer = new THREE.WebGLRenderer();
+            // 호환성을 위해 기본형으로 렌더러 생성 (성능 저하 요소 비활성화)
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.body.appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            // 광원 추가
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
             scene.add(ambientLight);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.4);
             dirLight.position.set(5, 15, 7);
             scene.add(dirLight);
 
-            const floor = new THREE.Mesh(new THREE.BoxGeometry(20, 0.5, 4), new THREE.MeshStandardMaterial());
+            // 물리용 바닥 메쉬
+            const floorGeo = new THREE.BoxGeometry(20, 0.5, 4);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B, roughness: 0.3 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
             floor.position.y = -0.25;
             scene.add(floor);
 
@@ -226,11 +237,11 @@
             function changeMapTheme() {
                 const themes = ["Gym", "Ice", "Beach", "Street", "Dark"];
                 const rTheme = themes[Math.floor(Math.random() * themes.length)];
-                if (rTheme === "Ice") { scene.background.setHex(0xd0e8f5); floor.material.color.setHex(0xffffff); floor.material.roughness = 0.05; }
-                else if (rTheme === "Beach") { scene.background.setHex(0xffdb7d); floor.material.color.setHex(0xdfb76c); floor.material.roughness = 0.9; }
-                else if (rTheme === "Street") { scene.background.setHex(0x555566); floor.material.color.setHex(0x333333); floor.material.roughness = 0.7; }
-                else if (rTheme === "Dark") { scene.background.setHex(0x111122); floor.material.color.setHex(0x151525); floor.material.roughness = 0.4; }
-                else { scene.background.setHex(0x70c5ce); floor.material.color.setHex(0x8B5A2B); floor.material.roughness = 0.3; }
+                if (rTheme === "Ice") { scene.background.setHex(0xd0e8f5); floor.material.color.setHex(0xffffff); }
+                else if (rTheme === "Beach") { scene.background.setHex(0xffdb7d); floor.material.color.setHex(0xdfb76c); }
+                else if (rTheme === "Street") { scene.background.setHex(0x555566); floor.material.color.setHex(0x333333); }
+                else if (rTheme === "Dark") { scene.background.setHex(0x111122); floor.material.color.setHex(0x151525); }
+                else { scene.background.setHex(0x70c5ce); floor.material.color.setHex(0x8B5A2B); }
                 return rTheme;
             }
 
@@ -292,7 +303,7 @@
                         if (keys['arrowdown'] && ballState === "p2") { shootBall(2); }
                     }
                 } else {
-                    // --- AI 조작 ---
+                    // --- 컴퓨터 AI 조작 ---
                     if (p2.isGrounded) {
                         p2.velX = 0;
                         if (ball.position.x < p2.root.position.x - 0.3) p2.velX = -moveSpeed * 0.8;
