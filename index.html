@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Basket Random - One Button Premium Edition</title>
+    <title>3D Basket Random - Move & Shoot Sync Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #05050f; font-family: 'Arial Black', sans-serif; }
         
@@ -35,7 +35,7 @@
 
         /* 양측 조작 설명창 */
         .control-box {
-            position: absolute; bottom: 20px; width: 230px; padding: 15px;
+            position: absolute; bottom: 20px; width: 240px; padding: 15px;
             background: rgba(0, 0, 0, 0.85); border-radius: 14px; color: white;
             font-family: sans-serif; font-size: 13px; box-shadow: 0 5px 20px rgba(0,0,0,0.7);
             border-top: 5px solid #fff; z-index: 20; pointer-events: none; line-height: 1.8;
@@ -44,7 +44,7 @@
         #p2-controls { right: 20px; border-color: #ff3333; }
         .control-box h3 { margin: 0 0 8px 0; font-size: 16px; text-transform: uppercase; }
         .key-badge {
-            background: #444; border-radius: 4px; padding: 3px 8px;
+            background: #444; border-radius: 4px; padding: 3px 6px;
             font-weight: bold; border-bottom: 2px solid #111; color: #fffdd0;
         }
     </style>
@@ -54,7 +54,7 @@
 
     <div id="menu">
         <h1>BASKET RANDOM 3D</h1>
-        <p>1-BUTTON TEAM REAL SHOWDOWN</p>
+        <p>2vs2 MOVE & SHOOT SYNC</p>
         <button class="menu-btn" onclick="startGame(1)">1 PLAYER (vs AI)</button>
         <button class="menu-btn" onclick="startGame(2)" style="background:#2255ff; box-shadow: 0 6px 0 #1133aa;">2 PLAYERS</button>
     </div>
@@ -65,16 +65,16 @@
         
         <div id="p1-controls" class="control-box">
             <h3 style="color: #6688ff;">Blue Team (1P)</h3>
-            <div style="color: #aaa; margin-bottom: 5px;">🕹️ 원버튼 동기화 모드</div>
-            <div>점프 + 슛 + 스틸 : <span class="key-badge">W</span></div>
-            <div style="font-size: 11px; color: #ffaa00; margin-top: 5px;">※ 누를 때마다 공중으로 뛰며 자동으로 공을 던지거나 가로챕니다!</div>
+            <div>⬅️ 후진 : <span class="key-badge">A</span> | ➡️ 전진 : <span class="key-badge">D</span></div>
+            <div>▲ 점프+슛+<b>⚡스틸</b> : <span class="key-badge">W</span></div>
+            <div style="font-size: 11px; color: #ffaa00; margin-top: 5px;">※ 공을 가졌을 때 뛰어오르면 최고 높이에서 자동으로 포물선 슛을 던집니다!</div>
         </div>
 
         <div id="p2-controls" class="control-box">
             <h3 id="p2-title" style="color: #ff6666;">Red Team (2P)</h3>
-            <div style="color: #aaa; margin-bottom: 5px;">🕹️ 원버튼 동기화 모드</div>
-            <div>점프 + 슛 + 스틸 : <span class="key-badge">▲ (Up)</span></div>
-            <div style="font-size: 11px; color: #ffaa00; margin-top: 5px;">※ 누를 때마다 공중으로 뛰며 자동으로 공을 던지거나 가로챕니다!</div>
+            <div>후진 ➡️ : <span class="key-badge">→</span> | 전진 ⬅️ : <span class="key-badge">←</span></div>
+            <div>▲ 점프+슛+<b>⚡스틸</b> : <span class="key-badge">↑ (Up)</span></div>
+            <div style="font-size: 11px; color: #ffaa00; margin-top: 5px;">※ 상대방 소유의 공 근처에서 점프하면 공을 스틸할 수 있습니다!</div>
         </div>
     </div>
 
@@ -82,7 +82,7 @@
         let gameMode = 1;
         let gameStarted = false;
         const keys = {};
-        const prevKeys = {}; // 연속 입력 방지용
+        const prevKeys = {}; 
 
         window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
         window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
@@ -112,31 +112,24 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.body.appendChild(renderer.domElement);
 
-            // 입체감을 극대화하는 조명 밸런스 (스튜디오 매치 풍)
+            // 빛 연산 상향
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
             scene.add(ambientLight);
-            
             const mainLight = new THREE.DirectionalLight(0xffffff, 0.55);
             mainLight.position.set(8, 20, 10);
             scene.add(mainLight);
-
             const rimLight = new THREE.DirectionalLight(0x99bbff, 0.4);
             rimLight.position.set(-8, 12, -6);
             scene.add(rimLight);
 
-            // 프리미엄 코트 바닥 레이아웃
+            // 고화질 코트 라인
             const floorGroup = new THREE.Group();
             scene.add(floorGroup);
 
-            // 고급 원목 질감 표현 코트
-            const floorMain = new THREE.Mesh(
-                new THREE.BoxGeometry(24, 0.5, 6),
-                new THREE.MeshStandardMaterial({ color: 0xdd8844, roughness: 0.15, metalness: 0.05 })
-            );
+            const floorMain = new THREE.Mesh(new THREE.BoxGeometry(24, 0.5, 6), new THREE.MeshStandardMaterial({ color: 0xdd8844, roughness: 0.15 }));
             floorMain.position.y = -0.25;
             floorGroup.add(floorMain);
 
-            // 페인트 구역 및 라인 디테일 추가
             const centerLine = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.53, 6), new THREE.MeshStandardMaterial({ color: 0xffffff }));
             centerLine.position.set(0, -0.24, 0);
             floorGroup.add(centerLine);
@@ -159,7 +152,7 @@
             let currentBallType = "Basketball";
             let goalMoveTimer = 0;
 
-            // 👑 하이엔드 복셀 캐릭터 빌더
+            // 하이 퀄리티 캐릭터 템플릿
             function createCharacter(color, xPos, isForward) {
                 const root = new THREE.Group();
                 root.position.set(xPos, 0, 0);
@@ -168,37 +161,30 @@
                 const mesh = new THREE.Group();
                 root.add(mesh);
 
-                // 상체 (유니폼)
                 const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.1, 0.6), new THREE.MeshStandardMaterial({ color: color, roughness: 0.4 }));
                 body.position.y = 0.95;
                 mesh.add(body);
 
-                // 하체 바지 레이어 분리
                 const pants = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.3, 0.62), new THREE.MeshStandardMaterial({ color: 0xffffff }));
                 pants.position.y = 0.5;
                 mesh.add(pants);
 
-                // 등번호 가시성 업그레이드
                 const numBox = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.55, 0.63), new THREE.MeshStandardMaterial({ color: 0xf5f5f5 }));
                 numBox.position.set(0, 1.0, 0);
                 mesh.add(numBox);
 
-                // 머리 및 세부 이목구비 볼륨감
                 const head = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.62, 0.62), new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
                 head.position.y = 1.75;
                 mesh.add(head);
 
-                // 입체 헤어스타일 (풍성한 사각 블록 구조)
                 const hair = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.2, 0.66), new THREE.MeshStandardMaterial({ color: 0x221100 }));
                 hair.position.set(0, 2.05, 0);
                 mesh.add(hair);
 
-                // 2개 관절로 분할된 롱 암 (슛 각도 극대화)
                 const arm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.9, 0.2), new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
                 arm.position.set(0, 1.3, 0);
                 mesh.add(arm);
 
-                // 고품질 하이탑 농구화
                 const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.22, 0.62), new THREE.MeshStandardMaterial({ color: 0x222222 }));
                 shoe.position.y = 0.11;
                 mesh.add(shoe);
@@ -206,26 +192,24 @@
                 const costume = new THREE.Group();
                 mesh.add(costume);
 
-                // 피지컬 기본 스케일 상향 (시각적 퀄리티 증가)
                 root.scale.set(1.1, 1.1, 1.1);
 
-                return { root, mesh, arm, costume, color, velY:0, velX:0, rotVel:0, isGrounded:true, isForward, initialX: xPos };
+                return { root, mesh, arm, costume, color, velY:0, velX:0, rotVel:0, isGrounded:true, isForward };
             }
 
-            // 2vs2 정예 스쿼드 라인업
             const team1 = [
-                createCharacter(0x2255ff, -2.8, true),   // 블루 공격수
-                createCharacter(0x0022aa, -6.0, false)  // 블루 수비수
+                createCharacter(0x2255ff, -2.8, true),
+                createCharacter(0x0022aa, -6.0, false)
             ];
             const team2 = [
-                createCharacter(0xff3333, 2.8, true),    // 레드 공격수
-                createCharacter(0xaa0000, 6.0, false)   // 레드 수비수
+                createCharacter(0xff3333, 2.8, true),
+                createCharacter(0xaa0000, 6.0, false)
             ];
 
             function changeCostume(char, type) {
                 while(char.costume.children.length > 0) char.costume.remove(char.costume.children[0]);
                 if (type === "Crown") {
-                    const c = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.45, 4), new THREE.MeshStandardMaterial({ color: 0xffd700, metalness:0.9, roughness:0.1 }));
+                    const c = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.45, 4), new THREE.MeshStandardMaterial({ color: 0xffd700, metalness:0.9 }));
                     c.position.set(0, 2.25, 0); char.costume.add(c);
                 } else if (type === "Goggles") {
                     const g = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.15, 0.65), new THREE.MeshStandardMaterial({ color: 0x00ffff, transparent:true, opacity:0.7 }));
@@ -233,7 +217,6 @@
                 }
             }
 
-            // 프로페셔널 트러스 구조 골대 빌드
             function buildGoals(type) {
                 while(leftGoalGroup.children.length > 0) leftGoalGroup.remove(leftGoalGroup.children[0]);
                 while(rightGoalGroup.children.length > 0) rightGoalGroup.remove(rightGoalGroup.children[0]);
@@ -247,8 +230,7 @@
                 if(type === "Giant") { pH = 6.2; rH = 4.8; rRad = 0.62; }
 
                 function makeStructure(group, isLeft) {
-                    // 기둥 보강 지지대 추가 (헤비 리얼리즘)
-                    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, pH, 16), new THREE.MeshStandardMaterial({ color: pCol, metalness:0.6, roughness:0.2 }));
+                    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, pH, 16), new THREE.MeshStandardMaterial({ color: pCol, metalness:0.6 }));
                     pole.position.y = pH/2; group.add(pole);
 
                     const support = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, pH*0.7), new THREE.MeshStandardMaterial({ color: 0x555555 }));
@@ -256,7 +238,6 @@
                     support.position.set(isLeft ? -0.8 : 0.8, pH*0.3, 0);
                     group.add(support);
 
-                    // 유리 가판대 스타일 고급 백보드
                     const board = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.5*(rRad/0.38), 2.4*(rRad/0.38)), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness:0.05, transparent:true, opacity:0.85 }));
                     board.position.set(isLeft ? 0.6 : -0.6, pH, 0);
                     group.add(board);
@@ -265,14 +246,12 @@
                     innerBorder.position.set(isLeft ? 0.6 : -0.6, pH - 0.2, 0);
                     group.add(innerBorder);
 
-                    // 네트 스커트 묘사가 들어간 림
-                    const rim = new THREE.Mesh(new THREE.TorusGeometry(rRad, 0.045, 8, 24), new THREE.MeshStandardMaterial({ color: 0xff4400, metalness:0.5 }));
+                    const rim = new THREE.Mesh(new THREE.TorusGeometry(rRad, 0.045, 8, 24), new THREE.MeshStandardMaterial({ color: 0xff4400 }));
                     rim.rotation.x = Math.PI / 2;
                     rim.position.set(isLeft ? 0.85 : -0.85, rH, 0);
                     group.add(rim);
 
-                    // 그물망 필터 효과 메쉬
-                    const net = new THREE.Mesh(new THREE.CylinderGeometry(rRad, rRad*0.7, 0.5, 12, 1, true), new THREE.MeshStandardMaterial({ color: 0xffffff, wireframe:true, transparent:true, opacity:0.6 }));
+                    const net = new THREE.Mesh(new THREE.CylinderGeometry(rRad, rRad*0.7, 0.5, 12, 1, true), new THREE.MeshStandardMaterial({ color: 0xffffff, wireframe:true, transparent:true, opacity:0.5 }));
                     net.position.set(isLeft ? 0.85 : -0.85, rH - 0.25, 0);
                     group.add(net);
 
@@ -291,10 +270,10 @@
             function changeBall(type) {
                 currentBallType = type;
                 ball.material.metalness = 0; ball.material.roughness = 0.2;
-                if(type === "Gold") { ball.material.color.setHex(0xffea00); ball.material.metalness = 0.95; ball.material.roughness = 0.05; }
+                if(type === "Gold") { ball.material.color.setHex(0xffea00); ball.material.metalness = 0.95; }
                 else if(type === "Soccer") { ball.material.color.setHex(0xffffff); ball.material.roughness = 0.5; }
-                else if(type === "Bowling") { ball.material.color.setHex(0x0c0c24); ball.material.metalness = 0.4; }
-                else { ball.material.color.setHex(0xff5500); } // 명도 높은 농구공
+                else if(type === "Bowling") { ball.material.color.setHex(0x0c0c24); }
+                else { ball.material.color.setHex(0xff5500); }
             }
 
             function resetRound() {
@@ -310,7 +289,7 @@
                 team1.forEach(c => changeCostume(c, Math.random() > 0.5 ? "Crown" : "Goggles"));
                 team2.forEach(c => changeCostume(c, Math.random() > 0.5 ? "Crown" : "Goggles"));
 
-                document.getElementById('info-text').innerText = `모드: 2vs2 원버튼 매치 | 매치볼: ${currentBallType} | 골대 기믹: ${currentGoalType}`;
+                document.getElementById('info-text').innerText = `2vs2 방향키 이동 모드 | 매치볼: ${currentBallType} | 골대 기믹: ${currentGoalType}`;
 
                 team1[0].root.position.set(-2.5, 0, 0); team1[1].root.position.set(-5.5, 0, 0);
                 team2[0].root.position.set(2.5, 0, 0);  team2[1].root.position.set(5.5, 0, 0);
@@ -326,26 +305,33 @@
 
             resetRound();
 
-            // 🚀 요구사항 적용: 포물선 탄도 슛 높이 대폭 상향 수정
+            // 🚀 포물선 탄도 슛 높이 대폭 상향 적용 상단부
             function fireShoot(dirSign) {
                 ballState = "free";
-                let apexY = 10.5 + Math.random() * 3.5; // 기존 대비 슛 높이를 대폭 상향하여 시원한 포물선 구현
+                let apexY = 11.0 + Math.random() * 3.0; 
                 if(currentBallType === "Bowling") apexY -= 3.0;
                 ballVel.set(dirSign * (6.5 + Math.random() * 3.5), apexY, 0);
             }
 
-            const gravity = -18.5; const dt = 0.016;
+            const gravity = -18.5; const dt = 0.016; const moveSpeed = 4.5;
 
-            // 🕹️ 핵심 로직: 아래쪽 키 완전 제거 및 1버튼(점프+슛+스틸 동기화) 입력 프로세서
+            // 🕹️ 변경 가치 포인트: [방향키 이동 유지] + [상단 버튼 슛 동기화 통합]
             function processInputs() {
-                // --- 1P 블루팀 원버튼 제어 (W) ---
-                let p1Action = false;
-                if (keys['w'] && !prevKeys['w']) p1Action = true;
+                // --- 1P 블루팀 조작 프로세싱 (A, D = 좌우이동 / W = 점프+슛+스틸) ---
+                let p1MoveX = 0;
+                if (keys['a']) p1MoveX = -moveSpeed;
+                if (keys['d']) p1MoveX = moveSpeed;
+
+                let p1JumpAction = false;
+                if (keys['w'] && !prevKeys['w']) p1JumpAction = true;
                 prevKeys['w'] = keys['w'];
 
-                if (p1Action) {
-                    team1.forEach((char, idx) => {
-                        // 1. 접촉 스틸 연산 우선 실행
+                team1.forEach((char, idx) => {
+                    // 바닥에 있든 공중에 있든 이동키 조작 가속도 누적 반영
+                    char.velX = p1MoveX;
+
+                    if (p1JumpAction) {
+                        // 스틸 가로채기 연산 검증
                         if (ballState.startsWith("p2")) {
                             let targetIdx = ballState.split("_")[1];
                             let targetChar = team2[targetIdx];
@@ -353,30 +339,35 @@
                                 ballState = `p1_${idx}`;
                             }
                         }
-                        
-                        // 2. 점프 구동 메커니즘
+
+                        // 원버튼 트리거로 공중 점프 개시
                         if (char.isGrounded) {
-                            char.velY = 8.2 + (idx * 0.8) + Math.random()*2; // Basket Random 특유의 엉뚱한 점프 가속도
-                            char.velX = 2.5 + Math.random()*3.5; // 전진 관성 강제 부여
+                            char.velY = 8.5 + (idx * 0.7) + Math.random()*1.5;
                             char.isGrounded = false;
-                            char.rotVel = (Math.random() - 0.5) * 6; // 난해한 몸회전 각속도 추가
+                            char.rotVel = (Math.random() - 0.5) * 5;
                         }
 
-                        // 3. 슛 동기화 발사
+                        // 공을 잡고 뛰어오를 때 포물선 자동 발사 연계
                         if (ballState === `p1_${idx}`) {
                             fireShoot(1);
                         }
-                    });
-                }
+                    }
+                });
 
-                // --- 2P 레드팀 원버튼 제어 (ArrowUp) ---
+                // --- 2P 레드팀 조작 프로세싱 (Left, Right = 좌우이동 / Up = 점프+슛+스틸) ---
                 if (gameMode === 2) {
-                    let p2Action = false;
-                    if (keys['arrowup'] && !prevKeys['arrowup']) p2Action = true;
+                    let p2MoveX = 0;
+                    if (keys['arrowleft']) p2MoveX = -moveSpeed;
+                    if (keys['arrowright']) p2MoveX = moveSpeed;
+
+                    let p2JumpAction = false;
+                    if (keys['arrowup'] && !prevKeys['arrowup']) p2JumpAction = true;
                     prevKeys['arrowup'] = keys['arrowup'];
 
-                    if (p2Action) {
-                        team2.forEach((char, idx) => {
+                    team2.forEach((char, idx) => {
+                        char.velX = p2MoveX;
+
+                        if (p2JumpAction) {
                             if (ballState.startsWith("p1")) {
                                 let targetIdx = ballState.split("_")[1];
                                 let targetChar = team1[targetIdx];
@@ -386,32 +377,29 @@
                             }
 
                             if (char.isGrounded) {
-                                char.velY = 8.2 + (idx * 0.8) + Math.random()*2;
-                                char.velX = -(2.5 + Math.random()*3.5); // 왼쪽 진형으로 전진 관성
+                                char.velY = 8.5 + (idx * 0.7) + Math.random()*1.5;
                                 char.isGrounded = false;
-                                char.rotVel = (Math.random() - 0.5) * 6;
+                                char.rotVel = (Math.random() - 0.5) * 5;
                             }
 
                             if (ballState === `p2_${idx}`) {
                                 fireShoot(-1);
                             }
-                        });
-                    }
+                        }
+                    });
                 } else {
-                    // --- 🤖 1버튼 메커니즘 기반 스마트 적 팀 AI 알고리즘 ---
-                    let aiAction = false;
-                    
-                    // 공이 자기 진영 근처로 오거나 루즈볼 상태일 때 무작위 주기 확률로 1버튼 트리거 시전
-                    if (ball.position.x > -1.5 && Math.random() < 0.045) {
-                        aiAction = true;
-                    }
-                    // AI가 공을 들고 있다면 즉시 트리거 발동하여 슛 연계
-                    if (ballState.startsWith("p2")) {
-                        aiAction = true;
-                    }
+                    // --- 🤖 인공지능 컴퓨터 동작 흐름 제어 ---
+                    team2.forEach((char, idx) => {
+                        char.velX = 0;
+                        
+                        // 방향키 조작과 동일하게 공을 향해 AI가 실시간 이동 연산 수행
+                        if (ball.position.x < char.root.position.x - 0.2) char.velX = -moveSpeed * 0.8;
+                        if (ball.position.x > char.root.position.x + 0.2) char.velX = moveSpeed * 0.8;
 
-                    if (aiAction) {
-                        team2.forEach((char, idx) => {
+                        let aiJumpRandom = Math.random() < 0.035;
+                        if (ballState.startsWith("p2")) aiJumpRandom = true; // 공 가졌으면 무조건 점프슛 연계
+
+                        if (aiJumpRandom) {
                             if (ballState.startsWith("p1")) {
                                 let targetIdx = ballState.split("_")[1];
                                 let targetChar = team1[targetIdx];
@@ -421,17 +409,16 @@
                             }
 
                             if (char.isGrounded) {
-                                char.velY = 8.0 + Math.random()*3;
-                                char.velX = -(2.0 + Math.random()*3.5);
+                                char.velY = 8.5 + Math.random()*2;
                                 char.isGrounded = false;
-                                char.rotVel = (Math.random() - 0.5) * 6;
+                                char.rotVel = (Math.random() - 0.5) * 5;
                             }
 
                             if (ballState === `p2_${idx}`) {
                                 fireShoot(-1);
                             }
-                        });
-                    }
+                        }
+                    });
                 }
             }
 
@@ -442,17 +429,14 @@
                     char.root.position.x += char.velX * dt;
                     char.mesh.rotation.z += char.rotVel * dt;
 
-                    // 팔 휘두르며 슛 폼 잡기 애니메이션 가속
                     char.arm.position.y = 1.3 + Math.sin(Date.now() * 0.04) * 0.4;
                     char.arm.rotation.z = Math.cos(Date.now() * 0.04) * 1.2;
                 } else {
-                    // 바닥에 있을 땐 중심 위치로 조금씩 미끄러지듯 자연스럽게 제어
-                    char.velX *= 0.85;
                     char.root.position.x += char.velX * dt;
                 }
 
                 if (char.root.position.y <= 0) {
-                    char.root.position.y = 0; char.mesh.rotation.z = 0; char.velY = 0; char.velX = 0; char.rotVel = 0; char.isGrounded = true;
+                    char.root.position.y = 0; char.mesh.rotation.z = 0; char.velY = 0; char.rotVel = 0; char.isGrounded = true;
                     char.arm.position.set(0, 1.3, 0); char.arm.rotation.z = 0;
                 }
 
@@ -476,7 +460,6 @@
                     leftGoalGroup.position.y = 0; rightGoalGroup.position.y = 0;
                 }
 
-                // 공의 가속 및 물리 처리
                 if (ballState === "free") {
                     let bGrav = gravity;
                     if(currentBallType === "Bowling") bGrav *= 1.8;
@@ -488,7 +471,6 @@
                     }
                     if (Math.abs(ball.position.x) > 11.2) ballVel.x = -ballVel.x * 0.75;
 
-                    // 충돌 구역을 통한 루즈볼 자석 흡입 소유권 획득 판정
                     team1.forEach((c, idx) => {
                         if (ball.position.distanceTo(c.root.position.clone().add(new THREE.Vector3(0,1.2,0))) < 1.3) ballState = `p1_${idx}`;
                     });
@@ -500,12 +482,10 @@
                     let side = ballState.startsWith("p1") ? 1 : -1;
                     let idx = ballState.split("_")[1];
                     let owner = side === 1 ? team1[idx] : team2[idx];
-                    // 캐릭터 신체 스케일에 비례하도록 공 위치 연동 최적화
                     ball.position.set(owner.root.position.x + (0.55 * side), owner.root.position.y + 1.7, 0);
                     ballVel.set(0,0,0);
                 }
 
-                // 득점 체크 로직 고정
                 const leftRimPos = leftGoalGroup.position.clone().add(leftRim.position);
                 const rightRimPos = rightGoalGroup.position.clone().add(rightRim.position);
                 let scoreRad = currentGoalType === "Mini" ? 0.36 : (currentGoalType === "Giant" ? 0.8 : 0.5);
