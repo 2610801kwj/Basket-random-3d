@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Basket Random - 2vs2 High Quality Edition</title>
+    <title>3D Basket Random - 2vs2 Fixed Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #0a0a1a; font-family: 'Arial Black', sans-serif; }
         
@@ -98,16 +98,15 @@
             else document.getElementById('p2-title').innerText = "Red Team (2P)";
 
             if (typeof THREE === 'undefined') {
-                alert("엔진 로드 실패. 인터넷 연결을 확인하고 새로고침 해주세요.");
+                alert("엔진 로드 실패. 새로고침을 해주세요.");
                 return;
             }
             initGame();
         }
 
         function initGame() {
-            // 1. 씬 및 카메라 세팅
             const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1a2536); // 기본 고급진 다크 네이비 배경
+            scene.background = new THREE.Color(0x1a2536);
 
             const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.set(0, 5, 12);
@@ -118,7 +117,6 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.body.appendChild(renderer.domElement);
 
-            // 2. 고품질 광원 (앰비언트 + 더블 디렉셔널로 입체감 강화)
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
             scene.add(ambientLight);
             
@@ -126,21 +124,19 @@
             dirLight1.position.set(6, 18, 8);
             scene.add(dirLight1);
 
-            const dirLight2 = new THREE.DirectionalLight(0xaaccff, 0.3); // 역광을 주어 입체감 부여
+            const dirLight2 = new THREE.DirectionalLight(0xaaccff, 0.3);
             dirLight2.position.set(-6, 10, -5);
             scene.add(dirLight2);
 
-            // 3. 디테일해진 코트 바닥 (라인 추가)
             const floorGroup = new THREE.Group();
             scene.add(floorGroup);
 
             const floorGeo = new THREE.BoxGeometry(22, 0.5, 5);
-            const floorMat = new THREE.MeshStandardMaterial({ color: 0xcc7a33, roughness: 0.2 }); // 반짝이는 농구 코트 재질
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0xcc7a33, roughness: 0.2 });
             const floorMain = new THREE.Mesh(floorGeo, floorMat);
             floorMain.position.y = -0.25;
             floorGroup.add(floorMain);
 
-            // 코트 센터라인 장식
             const centerLine = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.52, 5), new THREE.MeshStandardMaterial({ color: 0xffffff }));
             centerLine.position.set(0, -0.24, 0);
             floorGroup.add(centerLine);
@@ -155,7 +151,6 @@
             let currentBallType = "Basketball";
             let goalMoveTimer = 0;
 
-            // 4. 고품질 캐릭터 생성 (유니폼 번호판, 신발 묘사 추가)
             function createCharacter(color, xPos, isForward) {
                 const root = new THREE.Group();
                 root.position.set(xPos, 0, 0);
@@ -164,32 +159,26 @@
                 const mesh = new THREE.Group();
                 root.add(mesh);
 
-                // 유니폼 몸통
                 const body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.2, 0.55), new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 }));
                 body.position.y = 0.9;
                 mesh.add(body);
 
-                // 유니폼 등번호 마크 느낌 대용 구조물
                 const numberPlate = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.5, 0.58), new THREE.MeshStandardMaterial({ color: 0xffffff }));
                 numberPlate.position.set(0, 1.0, 0);
                 mesh.add(numberPlate);
 
-                // 피부색 머리
                 const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
                 head.position.y = 1.75;
                 mesh.add(head);
 
-                // 머리 띠 추가 (디테일)
                 const hairBand = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.12, 0.64), new THREE.MeshStandardMaterial({ color: 0x111111 }));
                 hairBand.position.set(0, 1.85, 0);
                 mesh.add(hairBand);
 
-                // 관절 팔
                 const arm = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.85, 0.18), new THREE.MeshStandardMaterial({ color: color }));
                 arm.position.set(0, 1.4, 0);
                 mesh.add(arm);
 
-                // 신발 레이어
                 const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.2, 0.58), new THREE.MeshStandardMaterial({ color: 0xffffff }));
                 shoe.position.y = 0.1;
                 mesh.add(shoe);
@@ -200,17 +189,15 @@
                 return { root, mesh, arm, costume, color, velY:0, velX:0, rotVel:0, isGrounded:true, isForward };
             }
 
-            // 🏀 2대2 구조 배열 세팅 (공격수, 수비수 배치)
             const team1 = [
-                createCharacter(0x2255ff, -3, true),   // 1P 공격수 (앞선)
-                createCharacter(0x1133aa, -5.5, false)  // 1P 수비수 (골대앞)
+                createCharacter(0x2255ff, -2.5, true),
+                createCharacter(0x1133aa, -5.5, false)
             ];
             const team2 = [
-                createCharacter(0xff3333, 3, true),    // 2P 공격수 (앞선)
-                createCharacter(0xaa1111, 5.5, false)   // 2P 수비수 (골대앞)
+                createCharacter(0xff3333, 2.5, true),
+                createCharacter(0xaa1111, 5.5, false)
             ];
 
-            // 코스튬 다양화
             function changeCostume(char, type) {
                 while(char.costume.children.length > 0) char.costume.remove(char.costume.children[0]);
                 if (type === "Crown") {
@@ -225,7 +212,6 @@
                 }
             }
 
-            // 5. 고품질 입체 골대 구조 빌드
             function buildGoals(type) {
                 while(leftGoalGroup.children.length > 0) leftGoalGroup.remove(leftGoalGroup.children[0]);
                 while(rightGoalGroup.children.length > 0) rightGoalGroup.remove(rightGoalGroup.children[0]);
@@ -239,21 +225,17 @@
                 if(type === "Giant") { pH = 5.8; rH = 4.6; rRad = 0.58; }
 
                 function makeStructure(group, isLeft) {
-                    // 메인 기둥
                     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, pH, 12), new THREE.MeshStandardMaterial({ color: pCol, metalness:0.5 }));
                     pole.position.y = pH/2; group.add(pole);
 
-                    // 백보드 두께감 상향
                     const board = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.4*(rRad/0.35), 2.2*(rRad/0.35)), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness:0.1 }));
                     board.position.set(isLeft ? 0.5 : -0.5, pH, 0);
                     group.add(board);
 
-                    // 백보드 내부 빨간 사각형 가이드라인 라인 장식
                     const boardIn = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.5*(rRad/0.35), 0.7*(rRad/0.35)), new THREE.MeshStandardMaterial({ color: 0xff3333 }));
                     boardIn.position.set(isLeft ? 0.5 : -0.5, pH - 0.2, 0);
                     group.add(boardIn);
 
-                    // 농구 림
                     const rim = new THREE.Mesh(new THREE.TorusGeometry(rRad, 0.04, 8, 20), new THREE.MeshStandardMaterial({ color: 0xff5500 }));
                     rim.rotation.x = Math.PI / 2;
                     rim.position.set(isLeft ? 0.7 : -0.7, rH, 0);
@@ -264,12 +246,9 @@
                 rightRim = makeStructure(rightGoalGroup, false);
             }
 
-            // 6. 공 세팅
             const ball = new THREE.Mesh(new THREE.SphereGeometry(0.28, 20, 20), new THREE.MeshStandardMaterial());
             scene.add(ball);
             let ballVel = new THREE.Vector3();
-            
-            // ballState 가 구조물 개체가 아닌 문자열+인덱스로 추적되도록 변경 ("free", "p1_0", "p1_1", "p2_0", "p2_1")
             let ballState = "free"; 
             let p1Score = 0, p2Score = 0;
 
@@ -279,11 +258,10 @@
                 if(type === "Gold") { ball.material.color.setHex(0xffd700); ball.material.metalness = 0.9; }
                 else if(type === "Soccer") { ball.material.color.setHex(0xffffff); ball.material.roughness = 0.6; }
                 else if(type === "Bowling") { ball.material.color.setHex(0x111133); ball.material.roughness = 0.1; }
-                else { ball.material.color.setHex(0xff6600); } // 기본 농구공
+                else { ball.material.color.setHex(0xff6600); }
             }
 
             function resetRound() {
-                // 이펙트 및 스케일 리셋
                 const themes = [0x1a2536, 0x112211, 0x221122, 0x222222];
                 scene.background.setHex(themes[Math.floor(Math.random() * themes.length)]);
                 
@@ -299,7 +277,6 @@
 
                 document.getElementById('info-text').innerText = `경기 방식: 2vs2 대전 | 골대: ${currentGoalType} | 매치 볼: ${currentBallType}`;
 
-                // 포지션 초기화 (공격수 수비수 간격 배치)
                 team1[0].root.position.set(-2.5, 0, 0); team1[1].root.position.set(-5.5, 0, 0);
                 team2[0].root.position.set(2.5, 0, 0);  team2[1].root.position.set(5.5, 0, 0);
 
@@ -314,7 +291,6 @@
 
             resetRound();
 
-            // 슛 메커니즘
             function fireShoot(dirSign) {
                 ballState = "free";
                 let pY = 6.5 + Math.random()*2.5;
@@ -324,7 +300,6 @@
 
             const gravity = -19; const dt = 0.016; const moveSpeed = 4.5;
 
-            // 실시간 키 입력 프로세서 (2대2 동시 조작 연산 및 스틸 판정 포함)
             function processInputs() {
                 // --- 1P 블루팀 조작 (WASD) ---
                 let p1JumpTrigger = false;
@@ -340,20 +315,18 @@
                     if (char.isGrounded) {
                         char.velX = p1MoveX;
                         if (p1JumpTrigger) {
-                            char.velY = 8.5 + (idx * 0.5); // 공격수와 수비수의 점프 타이밍 살짝 분리하여 입체감 부여
+                            char.velY = 8.5 + (idx * 0.5);
                             char.isGrounded = false;
                             char.rotVel = (Math.random() - 0.5) * 3;
                         }
-                        // 슛 및 스틸 동작 처리
                         if (p1StealShootTrigger) {
                             if (ballState === `p1_${idx}`) {
-                                fireShoot(1); // 블루팀은 오른쪽 골대로 슛
+                                fireShoot(1);
                             } else if (ballState.startsWith("p2")) {
-                                // ⚡ 볼 스틸 연산: 소유자와 나의 거리가 가까울 때 S를 누르면 가로채기 가능
                                 let targetIdx = ballState.split("_")[1];
                                 let targetChar = team2[targetIdx];
                                 if (char.root.position.distanceTo(targetChar.root.position) < 1.6) {
-                                    ballState = `p1_${idx}`; // 스틸 성공
+                                    ballState = `p1_${idx}`;
                                 }
                             }
                         }
@@ -381,36 +354,31 @@
                             }
                             if (p2StealShootTrigger) {
                                 if (ballState === `p2_${idx}`) {
-                                    fireShoot(-1); // 레드팀은 왼쪽 골대로 슛
+                                    fireShoot(-1);
                                 } else if (ballState.startsWith("p1")) {
-                                    // ⚡ 볼 스틸 연산
                                     let targetIdx = ballState.split("_")[1];
                                     let targetChar = team1[targetIdx];
                                     if (char.root.position.distanceTo(targetChar.root.position) < 1.6) {
-                                        ballState = `p2_${idx}`; // 스틸 성공
+                                        ballState = `p2_${idx}`;
                                     }
                                 }
                             }
                         }
                     });
                 } else {
-                    // --- 🤖 스마트 2대2 팀 AI 대전 알고리즘 ---
+                    // --- AI 대전 알고리즘 ---
                     team2.forEach((char, idx) => {
                         if (char.isGrounded) {
                             char.velX = 0;
-                            // 공격수 AI: 공을 따라 전진/후진 추적
                             if (char.isForward) {
                                 if (ball.position.x < char.root.position.x - 0.2) char.velX = -moveSpeed * 0.75;
                                 if (ball.position.x > char.root.position.x + 0.2) char.velX = moveSpeed * 0.75;
                                 
-                                // 볼 소유시 즉시 자동 슛
                                 if (ballState === `p2_${idx}`) fireShoot(-1);
-                                // 블루팀이 공을 가졌고 근접해있다면 상시 스틸 시도
                                 if (ballState.startsWith("p1") && ball.position.distanceTo(char.root.position) < 1.5 && Math.random() < 0.1) {
                                     ballState = `p2_${idx}`;
                                 }
                             } else {
-                                // 수비수 AI: 자기 골대 근처 사수 및 날아오는 공 방어 점프
                                 let defendSpot = 5.5;
                                 if (char.root.position.x < defendSpot - 0.3) char.velX = moveSpeed * 0.6;
                                 if (char.root.position.x > defendSpot + 0.3) char.velX = -moveSpeed * 0.6;
@@ -432,7 +400,6 @@
                     char.root.position.x += char.velX * dt;
                     char.mesh.rotation.z += char.rotVel * dt;
 
-                    // 역동적인 팔 스윙 동작 애니메이션 적용
                     char.arm.position.y = 1.4 + Math.sin(Date.now() * 0.03) * 0.3;
                     char.arm.rotation.z = Math.cos(Date.now() * 0.03) * 0.8;
                 } else {
@@ -444,7 +411,6 @@
                     char.arm.position.set(0, 1.4, 0); char.arm.rotation.z = 0;
                 }
 
-                // 포지션 이탈 벽 제어
                 if(char.root.position.x < -9.5) char.root.position.x = -9.5;
                 if(char.root.position.x > 9.5) char.root.position.x = 9.5;
             }
@@ -456,7 +422,6 @@
                 team1.forEach(updatePhysics);
                 team2.forEach(updatePhysics);
 
-                // 무빙 골대 기믹 작동
                 if (currentGoalType === "Moving") {
                     goalMoveTimer += dt * 2.2;
                     const offset = Math.sin(goalMoveTimer) * 1.4;
@@ -466,20 +431,17 @@
                     leftGoalGroup.position.y = 0; rightGoalGroup.position.y = 0;
                 }
 
-                // 7. 공의 가속도 시뮬레이션 및 소유권 감지 연산
                 if (ballState === "free") {
                     let bGrav = gravity;
                     if(currentBallType === "Bowling") bGrav *= 1.7;
                     ballVel.y += bGrav * dt; ball.position.x += ballVel.x * dt; ball.position.y += ballVel.y * dt;
 
-                    // 바닥 및 벽면 리바운드 반사
                     let bounce = 0.75; if(currentBallType === "Bowling") bounce = 0.2;
                     if (ball.position.y <= 0.28) {
                         ball.position.y = 0.28; ballVel.y = -ballVel.y * bounce; ballVel.x *= 0.95;
                     }
                     if (Math.abs(ball.position.x) > 9.8) ballVel.x = -ballVel.x * 0.75;
 
-                    // 루즈볼 획득 실시간 가로채기 반경 충돌 감지
                     team1.forEach((c, idx) => {
                         if (ball.position.distanceTo(c.root.position.clone().add(new THREE.Vector3(0,1.1,0))) < 1.2) ballState = `p1_${idx}`;
                     });
@@ -488,7 +450,6 @@
                     });
 
                 } else {
-                    // 플레이어 공 소유 핸들링 (소유자 머리 앞에 공이 세팅됨)
                     let side = ballState.startsWith("p1") ? 1 : -1;
                     let idx = ballState.split("_")[1];
                     let owner = side === 1 ? team1[idx] : team2[idx];
@@ -496,15 +457,15 @@
                     ballVel.set(0,0,0);
                 }
 
-                // 8. 림 통과 득점 판정 및 라운드 전환
                 const leftRimPos = leftGoalGroup.position.clone().add(leftRim.position);
                 const rightRimPos = rightGoalGroup.position.clone().add(rightRim.position);
                 let scoreRad = currentGoalType === "Mini" ? 0.35 : (currentGoalType === "Giant" ? 0.75 : 0.48);
 
+                // 오타 수정 완결 지점 (scoreRadius 코드 꼬임 제거)
                 if (ball.position.distanceTo(leftRimPos) < scoreRad && ballVel.y < 0) {
                     p2Score++; document.getElementById('p2-score').innerText = p2Score; resetRound();
                 }
-                if (ball.position.distanceTo(rightRimPos) < scoreRadius = scoreRad && ballVel.y < 0) {
+                if (ball.position.distanceTo(rightRimPos) < scoreRad && ballVel.y < 0) {
                     p1Score++; document.getElementById('p1-score').innerText = p1Score; resetRound();
                 }
 
