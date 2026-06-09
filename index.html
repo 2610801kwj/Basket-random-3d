@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basket Random 3D - Sync Proportions</title>
+    <title>Basket Random 3D - Rebound & Out</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #0b0c10; font-family: 'Arial Black', sans-serif; user-select: none; }
         
@@ -53,7 +53,7 @@
 
     <div id="menu">
         <h1>BASKET RANDOM 3D</h1>
-        <p>시즌 2 : 4인 공통 체형 동기화 & 장외 무승부 패치</p>
+        <p>시즌 2.5 : 리바운드 활성화 & 장외 홈런 무승부 패치</p>
         <button class="menu-btn" onclick="startGame(1)">1 PLAYER (vs AI)</button>
         <button class="menu-btn" onclick="startGame(2)" style="background:#2255ff; box-shadow: 0 6px 0 #1133aa;">2 PLAYERS</button>
     </div>
@@ -67,7 +67,7 @@
 
     <div id="game-ui">
         <div id="ui"><span id="p1-score">0</span> : <span id="p2-score">0</span></div>
-        <div id="info-text">동기화 드래프트 중...</div>
+        <div id="info-text">스타디움 정비 중...</div>
         
         <div id="p1-controls" class="control-box">
             <h3 style="color: #6688ff; margin:0 0 8px 0;">Blue Team (1P)</h3>
@@ -163,6 +163,7 @@
         scene.add(leftGoalGroup); scene.add(rightGoalGroup);
         let leftRimPos = new THREE.Vector3(), rightRimPos = new THREE.Vector3();
         let rimRadius = 0.42;
+        let currentpH = 4.8; // 백보드 충돌 계산용 글로벌 높이 변수
 
         function buildGoals(type) {
             while(leftGoalGroup.children.length > 0) leftGoalGroup.remove(leftGoalGroup.children[0]);
@@ -173,6 +174,7 @@
             let pH = 4.8, rH = 3.8; rimRadius = 0.42;
             if(type === "Mini") { pH = 3.2; rH = 2.2; rimRadius = 0.3; }
             if(type === "Giant") { pH = 6.8; rH = 5.5; rimRadius = 0.7; }
+            currentpH = pH;
 
             function makeNet(group, isLeft) {
                 const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, pH, 16), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
@@ -186,7 +188,6 @@
             leftRimPos = makeNet(leftGoalGroup, true); rightRimPos = makeNet(rightGoalGroup, false);
         }
 
-        // 🛠️ 공통 체형 옵션을 적용받아 캐릭터를 조립하는 구조로 업그레이드
         function createPlayer(teamColor, xPos, isForward, headType, armType, legType) {
             const root = new THREE.Group();
             root.position.set(xPos, 0, 0);
@@ -195,11 +196,9 @@
             const pivot = new THREE.Group();
             root.add(pivot);
 
-            // 사람 같은 다양성: 인종 피부톤 및 헤어는 개별 랜덤 유지
             const skinColors = [0xffe0bd, 0xffd1a4, 0xe0ac69, 0xc68642, 0x4a2f13];
             const chosenSkin = skinColors[Math.floor(Math.random() * skinColors.length)];
 
-            // 🛠️ 스케일 대비 효과 대폭 확대 세팅 (눈에 더 잘 띄게 변경)
             const sizes = { "basic": 1.0, "small": 0.45, "short": 0.45, "big": 1.8, "long": 1.8 };
 
             const headScale = sizes[headType];
@@ -262,7 +261,7 @@
         let ballOwner = null; 
         let pickupCooldown = 0; let stealCooldown = 0; 
         let p1Score = 0, p2Score = 0;
-        let isTransitioning = false; // 무승부 중복 처리 방지용 플래그
+        let isTransitioning = false; 
         
         let currentGoalType = "Normal";
         let currentBallType = "Basketball";
@@ -274,7 +273,6 @@
             team1.forEach(p => scene.remove(p.root));
             team2.forEach(p => scene.remove(p.root));
             
-            // 🛠️ 다음 라운드 진입 시 전 선수에게 공통 적용할 단일 랜덤 옵션 세팅
             const headOptions = ["basic", "small", "big"];
             const armOptions = ["basic", "short", "long"];
             const legOptions = ["basic", "short", "long"];
@@ -283,7 +281,6 @@
             const roundArm = armOptions[Math.floor(Math.random() * 3)];
             const roundLeg = legOptions[Math.floor(Math.random() * 3)];
             
-            // 네 선수 모두에게 공통 데이터 주입
             team1 = [
                 createPlayer(0x2255ff, -2.6, true, roundHead, roundArm, roundLeg), 
                 createPlayer(0x0033bb, -5.5, false, roundHead, roundArm, roundLeg)
@@ -314,8 +311,8 @@
             else { courtMaterial.color.setHex(0xf09351); courtMaterial.roughness = 0.3; scene.background.setHex(0x11131c); }
 
             let hKo = {"basic":"보통머리", "small":"초소두👶", "big":"왕대두💀"}[roundHead];
-            let lKo = {"basic":"보통다리", "short":"숏다리덩치", "long":"롱다리거인🏃"}[roundLeg];
-            document.getElementById('info-text').innerText = `라운드 매치업 체형: [${hKo} + ${lKo}]`;
+            let lKo = {"basic":"보통다리", "short":"숏다리", "long":"롱다리🏃"}[roundLeg];
+            document.getElementById('info-text').innerText = `체형 동기화: [${hKo} + ${lKo}]`;
             
             ball.position.set(0, 6.0, 0);
             ballVel.set((Math.random() - 0.5) * 3, 3.5, 0);
@@ -388,12 +385,12 @@
 
             if (!p.isGrounded) {
                 p.velY += gravity * dt; p.root.position.y += p.velY * dt;
-                p.targetRotZ = Math.sin(time) * 0.54; // 앞뒤 흔들림 20% 강화 유지
+                p.targetRotZ = Math.sin(time) * 0.54; 
                 p.targetLegRot = 0.5;
                 p.arm.rotation.z = p.isForward ? Math.PI * 0.4 : -Math.PI * 0.4; p.bodyBob = 0;
             } else {
                 if (Math.abs(p.velX) > 0.4) {
-                    p.targetRotZ = (p.velX > 0 ? 0.18 : -0.18); // 대시 기우뚱 20% 강화 유지
+                    p.targetRotZ = (p.velX > 0 ? 0.18 : -0.18); 
                     p.targetLegRot = Math.sin(time * 1.6) * 0.65; p.arm.rotation.z = Math.sin(time) * 0.35;
                     p.bodyBob = Math.abs(Math.sin(time * 2.0)) * 0.08; 
                 } else {
@@ -464,11 +461,32 @@
 
                     if (ball.position.y <= 0.3) { ball.position.y = 0.3; ballVel.y = -ballVel.y * bounce; ballVel.x *= 0.96; }
 
-                    // 🛠️ 골대 바깥 장외 무승부 트리거 검사 (골대 뒤 장외 벽면 돌파 시 발생)
-                    if (Math.abs(ball.position.x) > 12.2 && !isTransitioning) {
+                    // 🛠️ 백보드 및 하부 벽면 충돌 연산 엔진 (안쪽으로 강력하게 리바운드)
+                    let leftBoardLine = -10.5;
+                    let rightBoardLine = 10.5;
+                    let leftTopLimit = leftGoalGroup.position.y + currentpH + 0.6;
+                    let rightTopLimit = rightGoalGroup.position.y + currentpH + 0.6;
+
+                    // 블루팀(왼쪽) 골대 백보드 면 충돌
+                    if (ball.position.x <= leftBoardLine && ball.position.x > -12.0) {
+                        if (ball.position.y < leftTopLimit) {
+                            ball.position.x = leftBoardLine + 0.05;
+                            ballVel.x = -ballVel.x * bounce; // 튕겨내기
+                        }
+                    }
+                    // 레드팀(오른쪽) 골대 백보드 면 충돌
+                    if (ball.position.x >= rightBoardLine && ball.position.x < 12.0) {
+                        if (ball.position.y < rightTopLimit) {
+                            ball.position.x = rightBoardLine - 0.05;
+                            ballVel.x = -ballVel.x * bounce; // 튕겨내기
+                        }
+                    }
+
+                    // 🛠️ 골대 자체를 완전히 넘어가거나 빗나간 장외 홈런성 플레이만 무승부 처리
+                    if (Math.abs(ball.position.x) > 12.4 && !isTransitioning) {
                         isTransitioning = true;
-                        document.getElementById('info-text').innerText = "🏳️ 장외 폴트! 무승부 (DRAW) - 라운드 재조립";
-                        setTimeout(resetRound, 1200); // 1.2초 대기 후 체형 전원 리롤 및 리셋
+                        document.getElementById('info-text').innerText = "🏳️ 장외 홈런! 무승부 (DRAW) - 라운드 재조립";
+                        setTimeout(resetRound, 1200); 
                     }
 
                     if (pickupCooldown > 0) { pickupCooldown -= dt; } else {
@@ -490,7 +508,6 @@
                     ball.position.set(ballOwner.root.position.x + (side * 0.45), ballOwner.root.position.y + ballOwner.centerH + 0.1, 0); ballVel.set(0, 0, 0);
                 }
 
-                // 골대 림 내부 득점 트리거
                 const worldLeftRim = leftGoalGroup.position.clone().add(leftRimPos);
                 const worldRightRim = rightGoalGroup.position.clone().add(rightRimPos);
                 let pointsToGive = (currentBallType === "Rainbow") ? 2 : 1;
