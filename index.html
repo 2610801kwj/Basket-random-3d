@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basket Random 3D - Rebound & Out</title>
+    <title>Basket Random 3D - English Info Setup</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #0b0c10; font-family: 'Arial Black', sans-serif; user-select: none; }
         
@@ -30,12 +30,13 @@
         
         #game-ui { display: none; pointer-events: none; }
         #ui {
-            position: absolute; top: 20px; width: 100%; text-align: center;
-            color: white; font-size: 50px; font-weight: bold; text-shadow: 4px 4px 0px #000; z-index: 10;
+            position: absolute; top: 15px; width: 100%; text-align: center;
+            color: white; font-size: 52px; font-weight: bold; text-shadow: 4px 4px 0px #000; z-index: 10;
         }
         #info-text {
-            position: absolute; top: 90px; width: 100%; text-align: center;
-            color: #ffdd44; font-size: 20px; font-weight: bold; text-shadow: 2px 2px 0px #000; z-index: 10;
+            position: absolute; top: 95px; width: 100%; text-align: center;
+            color: #ffdd44; font-size: 18px; font-weight: bold; text-shadow: 2px 2px 0px #000; z-index: 10;
+            letter-spacing: 0.5px;
         }
         .control-box {
             position: absolute; bottom: 20px; width: 240px; padding: 15px;
@@ -53,7 +54,7 @@
 
     <div id="menu">
         <h1>BASKET RANDOM 3D</h1>
-        <p>시즌 2.5 : 리바운드 활성화 & 장외 홈런 무승부 패치</p>
+        <p>English Live Status Tracker Overlay Enabled</p>
         <button class="menu-btn" onclick="startGame(1)">1 PLAYER (vs AI)</button>
         <button class="menu-btn" onclick="startGame(2)" style="background:#2255ff; box-shadow: 0 6px 0 #1133aa;">2 PLAYERS</button>
     </div>
@@ -67,18 +68,18 @@
 
     <div id="game-ui">
         <div id="ui"><span id="p1-score">0</span> : <span id="p2-score">0</span></div>
-        <div id="info-text">스타디움 정비 중...</div>
+        <div id="info-text">Preparing Stadium...</div>
         
         <div id="p1-controls" class="control-box">
             <h3 style="color: #6688ff; margin:0 0 8px 0;">Blue Team (1P)</h3>
-            <div>⬅️ 이동 : <span class="key-badge">A</span> , <span class="key-badge">D</span></div>
-            <div>▲ 점프 및 슛 : <span class="key-badge">W</span></div>
+            <div>⬅️ Move : <span class="key-badge">A</span> , <span class="key-badge">D</span></div>
+            <div>▲ Jump & Shoot : <span class="key-badge">W</span></div>
         </div>
 
         <div id="p2-controls" class="control-box">
             <h3 style="color: #ff6666; margin:0 0 8px 0;">Red Team (2P)</h3>
-            <div>⬅️ 이동 : <span class="key-badge">←</span> , <span class="key-badge">→</span></div>
-            <div>▲ 점프 및 슛 : <span class="key-badge">↑</span></div>
+            <div>⬅️ Move : <span class="key-badge">←</span> , <span class="key-badge">→</span></div>
+            <div>▲ Jump & Shoot : <span class="key-badge">↑</span></div>
         </div>
     </div>
 
@@ -163,7 +164,7 @@
         scene.add(leftGoalGroup); scene.add(rightGoalGroup);
         let leftRimPos = new THREE.Vector3(), rightRimPos = new THREE.Vector3();
         let rimRadius = 0.42;
-        let currentpH = 4.8; // 백보드 충돌 계산용 글로벌 높이 변수
+        let currentpH = 4.8; 
 
         function buildGoals(type) {
             while(leftGoalGroup.children.length > 0) leftGoalGroup.remove(leftGoalGroup.children[0]);
@@ -310,9 +311,14 @@
             else if(currentCourtType === "Mud") { courtMaterial.color.setHex(0x6e503b); courtMaterial.roughness = 0.9; scene.background.setHex(0x14100d); }
             else { courtMaterial.color.setHex(0xf09351); courtMaterial.roughness = 0.3; scene.background.setHex(0x11131c); }
 
-            let hKo = {"basic":"보통머리", "small":"초소두👶", "big":"왕대두💀"}[roundHead];
-            let lKo = {"basic":"보통다리", "short":"숏다리", "long":"롱다리🏃"}[roundLeg];
-            document.getElementById('info-text').innerText = `체형 동기화: [${hKo} + ${lKo}]`;
+            // 🛠️ 한글 번역부를 깔끔한 영문 대문자 키워드로 매칭 변경
+            let headEn = {"basic":"NORMAL HEAD", "small":"MINI HEAD", "big":"BIG HEAD"}[roundHead];
+            let armEn = {"basic":"NORMAL ARMS", "short":"SHORT ARMS", "long":"LONG ARMS"}[roundArm];
+            let legEn = {"basic":"NORMAL LEGS", "short":"SHORT LEGS", "long":"LONG LEGS"}[roundLeg];
+            
+            // 상단 레이아웃에 배치, 공과 코트 스타일까지 완벽히 영문 텍스트 연동
+            document.getElementById('info-text').innerText = 
+                `Match Setup: [${headEn} + ${armEn} + ${legEn}] | Ball: ${currentBallType} | Court: ${currentCourtType}`;
             
             ball.position.set(0, 6.0, 0);
             ballVel.set((Math.random() - 0.5) * 3, 3.5, 0);
@@ -461,31 +467,28 @@
 
                     if (ball.position.y <= 0.3) { ball.position.y = 0.3; ballVel.y = -ballVel.y * bounce; ballVel.x *= 0.96; }
 
-                    // 🛠️ 백보드 및 하부 벽면 충돌 연산 엔진 (안쪽으로 강력하게 리바운드)
                     let leftBoardLine = -10.5;
                     let rightBoardLine = 10.5;
                     let leftTopLimit = leftGoalGroup.position.y + currentpH + 0.6;
                     let rightTopLimit = rightGoalGroup.position.y + currentpH + 0.6;
 
-                    // 블루팀(왼쪽) 골대 백보드 면 충돌
                     if (ball.position.x <= leftBoardLine && ball.position.x > -12.0) {
                         if (ball.position.y < leftTopLimit) {
                             ball.position.x = leftBoardLine + 0.05;
-                            ballVel.x = -ballVel.x * bounce; // 튕겨내기
+                            ballVel.x = -ballVel.x * bounce;
                         }
                     }
-                    // 레드팀(오른쪽) 골대 백보드 면 충돌
                     if (ball.position.x >= rightBoardLine && ball.position.x < 12.0) {
                         if (ball.position.y < rightTopLimit) {
                             ball.position.x = rightBoardLine - 0.05;
-                            ballVel.x = -ballVel.x * bounce; // 튕겨내기
+                            ballVel.x = -ballVel.x * bounce;
                         }
                     }
 
-                    // 🛠️ 골대 자체를 완전히 넘어가거나 빗나간 장외 홈런성 플레이만 무승부 처리
+                    // 🛠️ 장외 무승부 발생 시 안내문구도 깔끔한 영어로 출력
                     if (Math.abs(ball.position.x) > 12.4 && !isTransitioning) {
                         isTransitioning = true;
-                        document.getElementById('info-text').innerText = "🏳️ 장외 홈런! 무승부 (DRAW) - 라운드 재조립";
+                        document.getElementById('info-text').innerText = "OUT OF BOUNDS! DRAW MATCH - Reloading Proportions";
                         setTimeout(resetRound, 1200); 
                     }
 
