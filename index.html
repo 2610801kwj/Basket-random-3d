@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Basket Random - Ultimate Edition</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #70c5ce; font-family: 'Arial Black', sans-serif; }
+        #ui {
+            position: absolute; top: 20px; width: 100%; text-align: center;
+            color: white; font-size: 40px; font-weight: bold; text-shadow: 3px 3px 0px #000;
+            pointer-events: none; user-select: none;
+        }
+        #info-text {
+            position: absolute; top: 80px; width: 100%; text-align: center;
+            color: #fffdd0; font-size: 20px; font-weight: bold; text-shadow: 2px 2px 0px #000;
+        }
+        #instructions {
+            position: absolute; bottom: 20px; width: 100%; text-align: center;
+            color: white; font-size: 16px; text-shadow: 1px 1px 2px #000;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="ui"><span id="p1-score">0</span> : <span id="p2-score">0</span></div>
+    <div id="info-text">라운드 생성 중...</div>
+    <div id="instructions">화면 클릭 또는 [Spacebar] : 점프 및 무작위 슛</div>
+
+    <script>
+        // 1. 기본 시스템 세팅
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 4.5, 11);
+        camera.lookAt(0, 2.5, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // 조명 세팅
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(5, 15, 7);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        // 맵 바닥 메쉬
+        const floorGeo = new THREE.BoxGeometry(20, 0.5, 4);
+        const floorMat = new THREE.MeshStandardMaterial();
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.position.y = -0.25;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // 2. 오브젝트 그룹 생성
+        let leftGoalGroup = new THREE.Group();
+        let rightGoalGroup = new THREE.Group();
+        scene.add(leftGoalGroup);
+        scene.add(rightGoalGroup);
+
+        let leftRim, rightRim;
+        let currentGoalType = "Normal";
+        let currentBallType = "Basketball";
+        let goalMoveTimer = 0;
+
+        // 3. 캐릭터 생성 및 외형 설정
+        function createCharacterGroup(color, xPos) {
+            const rootGroup = new THREE.Group();
+            rootGroup.position.set(xPos, 0, 0);
+            scene.add(rootGroup);
+
+            const charGroup = new THREE.Group();
+            rootGroup.add(charGroup);
+
+            // 긴 몸통
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.3, 0.5), new THREE.MeshStandardMaterial({ color: color }));
+            body.position.y = 0.95;
+            charGroup.add(body);
+
+            // 머리
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
+            head.position.y = 1.8;
+            charGroup.add(head);
+
+            // 만세 팔
+            const arm = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.9, 0.16), new THREE.MeshStandardMaterial({ color: color }));
+            arm.position.set(0, 1.5, 0);
+            charGroup.add(arm);
+
+            const costumeGroup = new THREE.Group();
+            charGroup.add(costumeGroup);
+
+            return { root: rootGroup, mesh: charGroup, arm: arm, costume: costumeGroup, color: color, velY:0, velX:0, rotVel:0, isGrounded:true };
+        }
+
+        const p1 = createCharacterGroup(0x2255ff, -3.5); // 블루팀
+        const p2 = createCharacterGroup(0xff3333, 3.5);  // 레드팀
+
+        // 4. [사람 종류 5종 설정]
+        function changeCharacterCostume(char, type) {
+            while(char.costume.children.length > 0) char.costume.remove(char.costume.children[0]);
+
+            if (type === "FancyHat") { // 1. 신사 모자
+                const topHat = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.4), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+                topHat.position.set(0, 2.3, 0);
+                const brim = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.05, 0.65), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+                brim.position.set(0, 2.1, 0);
+                char.costume.add(topHat, brim);
+            } else if (type === "AfroHair") { // 2. 폭탄 머리 가발
+                const hair = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 12), new THREE.MeshStandardMaterial({ color: 0xffaa00 }));
+                hair.position.set(0, 2.1, 0);
+                char.costume.add(hair);
+            } else if (type === "Crown") { // 3. 황금 왕관
+                const crown = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.4, 5), new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8 }));
+                crown.position.set(0, 2.2, 0);
+                char.costume.add(crown);
+            } else if (type === "LongBody") { // 4. 롱다리/롱몸통 기형 스타일
+                char.mesh.scale.set(1, 1.4, 1);
+            } else {
+                char.mesh.scale.set(1, 1, 1); // 5. 기본형
+            }
+        }
+
+        // 5. 공 데이터 정의
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 16), new THREE.MeshStandardMaterial());
+        scene.add(ball);
+        let ballVel = new THREE.Vector3();
+        let ballState = "free";
+        let p
