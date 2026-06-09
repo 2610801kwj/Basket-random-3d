@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basket Random 3D - Shoot Bug Fixed</title>
+    <title>Basket Random 3D - Advanced Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #0b0c10; font-family: 'Arial Black', sans-serif; }
         
@@ -46,7 +46,7 @@
 
     <div id="menu">
         <h1>BASKET RANDOM 3D</h1>
-        <p>랜덤 요소 및 슛 발사 완벽 복구 버전</p>
+        <p>볼 스틸 / 다리 관절 / 점프 업그레이드 버전</p>
         <button class="menu-btn" onclick="startGame(1)">1 PLAYER (vs AI)</button>
         <button class="menu-btn" onclick="startGame(2)" style="background:#2255ff; box-shadow: 0 6px 0 #1133aa;">2 PLAYERS</button>
     </div>
@@ -110,7 +110,7 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.85));
         const sunLight = new THREE.DirectionalLight(0xffffff, 0.6);
         sunLight.position.set(5, 15, 10);
         scene.add(sunLight);
@@ -158,6 +158,7 @@
             rightRimPos = makeNet(rightGoalGroup, false);
         }
 
+        // 🛠️ 사람다운 프로포션으로 수정 (다리 관절 메쉬 추가)
         function createPlayer(color, xPos, isForward) {
             const root = new THREE.Group();
             root.position.set(xPos, 0, 0);
@@ -166,16 +167,31 @@
             const pivot = new THREE.Group();
             root.add(pivot);
 
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.46, 1.1, 0.46), new THREE.MeshStandardMaterial({ color: color }));
-            body.position.y = 1.1; pivot.add(body);
+            // 상체 몸통
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.44, 1.0, 0.44), new THREE.MeshStandardMaterial({ color: color }));
+            body.position.y = 1.3; pivot.add(body);
 
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
-            head.position.y = 1.9; pivot.add(head);
+            // 머리
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.38, 0.38), new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
+            head.position.y = 2.0; pivot.add(head);
 
-            const arm = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.1, 0.14), new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
+            // 팔
+            const arm = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.9, 0.14), new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
             arm.position.set(isForward ? 0.22 : -0.22, 1.4, 0); pivot.add(arm);
 
-            return { root, pivot, arm, velX: 0, velY: 0, isGrounded: true, isForward, offset: Math.random()*50 };
+            // 바지/골반 부분
+            const pants = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.2, 0.46), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+            pants.position.y = 0.75; pivot.add(pants);
+
+            // 왼쪽 다리 & 오른쪽 다리 추가
+            const legMat = new THREE.MeshStandardMaterial({ color: 0xffe0bd });
+            const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.6, 0.14), legMat);
+            leftLeg.position.set(-0.12, 0.3, 0); pivot.add(leftLeg);
+
+            const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.6, 0.14), legMat);
+            rightLeg.position.set(0.12, 0.3, 0); pivot.add(rightLeg);
+
+            return { root, pivot, arm, leftLeg, rightLeg, velX: 0, velY: 0, isGrounded: true, isForward, offset: Math.random()*50 };
         }
 
         const team1 = [createPlayer(0x2255ff, -2.6, true), createPlayer(0x0033bb, -5.5, false)];
@@ -187,7 +203,8 @@
 
         let ballVel = new THREE.Vector3();
         let ballOwner = null; 
-        let pickupCooldown = 0; // 🚀 새로 추가된 쿨다운 변수
+        let pickupCooldown = 0; 
+        let stealCooldown = 0; // 스틸 연속 발생 방지 타이머
         let p1Score = 0, p2Score = 0;
         
         let currentGoalType = "Normal";
@@ -221,24 +238,38 @@
             ballVel.set((Math.random() - 0.5) * 3, 3.5, 0);
             ballOwner = null;
             pickupCooldown = 0;
+            stealCooldown = 0;
         }
         resetRound();
 
-        // 🚀 버그 해결: 슛을 쏘면 즉시 소유권을 풀고 0.3초간 쿨다운 부여
+        // 🛠️ 골대 크기 변화에 맞춰 발사 파워 자동 보정 시스템 구축
         function shoot(player, dirSign) {
             ballOwner = null;
-            pickupCooldown = 0.3; // 0.3초 동안 다시 잡지 못하게 설정
+            pickupCooldown = 0.4; 
             
-            let powerX = 14.5;
-            let powerY = 9.5;
+            let powerX = 14.8;
+            let powerY = 9.8;
             
-            if(currentBallType === "Bowling") { powerX = 9.0; powerY = 6.0; }
-            if(currentBallType === "Soccer") { powerX = 16.0; powerY = 11.0; }
+            if(currentBallType === "Bowling") { powerX = 10.5; powerY = 6.8; }
+            if(currentBallType === "Soccer") { powerX = 16.5; powerY = 11.5; }
+
+            // 골대 상태별 물리 파워 밸런싱 최적화
+            if(currentGoalType === "Mini") {
+                powerX *= 0.93; // 미니 골대는 살짝 낮고 정교하게
+                powerY *= 0.94;
+            } else if(currentGoalType === "Giant") {
+                powerX *= 1.06; // 큰 골대는 호쾌하게 멀리
+                powerY *= 1.12;
+            } else if(currentGoalType === "Moving") {
+                powerY *= 1.05; // 움직이는 골대 조준 보정 높이 업
+            }
 
             ballVel.set(dirSign * powerX, powerY, 0);
         }
 
-        const gravity = -22.0; const dt = 0.016; const moveSpeed = 5.2;
+        // 🛠️ 점프력 기존 대비 약 1.3배 상향 조정 완료 (10.5 -> 13.6)
+        const jumpPower = 13.6; 
+        const gravity = -24.0; const dt = 0.016; const moveSpeed = 5.2;
 
         function processInputs() {
             let p1MoveX = 0;
@@ -248,7 +279,7 @@
             if (keys['w'] && !prevKeys['w']) {
                 prevKeys['w'] = true;
                 team1.forEach(p => {
-                    if (p.isGrounded) { p.velY = 10.5; p.isGrounded = false; }
+                    if (p.isGrounded) { p.velY = jumpPower; p.isGrounded = false; }
                     if (ballOwner === p) shoot(p, 1);
                 });
             }
@@ -262,7 +293,7 @@
                 if (keys['arrowup'] && !prevKeys['arrowup']) {
                     prevKeys['arrowup'] = true;
                     team2.forEach(p => {
-                        if (p.isGrounded) { p.velY = 10.5; p.isGrounded = false; }
+                        if (p.isGrounded) { p.velY = jumpPower; p.isGrounded = false; }
                         if (ballOwner === p) shoot(p, -1);
                     });
                 }
@@ -274,13 +305,14 @@
                     if (ball.position.x > p.root.position.x + 0.2) p.velX = moveSpeed * 0.8;
                     
                     if (Math.random() < 0.03 && p.isGrounded) {
-                        p.velY = 10.0; p.isGrounded = false;
+                        p.velY = jumpPower * 0.95; p.isGrounded = false;
                         if (ballOwner === p) shoot(p, -1);
                     }
                 });
             }
         }
 
+        // 🛠️ 다리 관절 애니메이션 연산 메커니즘 업데이트
         function updatePhysics(p) {
             p.root.position.x += p.velX * dt;
             let time = Date.now() * 0.006 + p.offset;
@@ -290,9 +322,22 @@
                 p.root.position.y += p.velY * dt;
                 p.pivot.rotation.z = Math.sin(time) * 0.65;
                 p.arm.rotation.z = p.isForward ? Math.PI * 0.4 : -Math.PI * 0.4;
+                
+                // 공중 랙돌 다리 찢기 포즈
+                p.leftLeg.rotation.z = -0.4;
+                p.rightLeg.rotation.z = 0.4;
             } else {
                 p.pivot.rotation.z = Math.sin(time * 0.5) * 0.15;
                 p.arm.rotation.z = Math.sin(time) * 0.2;
+                
+                // 달릴 때 양다리가 교차 교대 스윙되도록 처리 (인간형 무브먼트 구현)
+                if (Math.abs(p.velX) > 0) {
+                    p.leftLeg.rotation.z = Math.sin(time * 1.5) * 0.6;
+                    p.rightLeg.rotation.z = -Math.sin(time * 1.5) * 0.6;
+                } else {
+                    p.leftLeg.rotation.z = 0;
+                    p.rightLeg.rotation.z = 0;
+                }
             }
 
             if (p.root.position.y <= 0) { p.root.position.y = 0; p.velY = 0; p.isGrounded = true; }
@@ -317,6 +362,8 @@
                     leftGoalGroup.position.y = 0; rightGoalGroup.position.y = 0;
                 }
 
+                if (stealCooldown > 0) stealCooldown -= dt;
+
                 if (ballOwner === null) {
                     let bGrav = gravity;
                     if(currentBallType === "Bowling") bGrav *= 1.5;
@@ -335,12 +382,11 @@
                     }
                     if (Math.abs(ball.position.x) > 12.0) ballVel.x = -ballVel.x * 0.7;
 
-                    // 🚀 쿨다운이 없을 때만 공을 잡을 수 있게 보호
                     if (pickupCooldown > 0) {
                         pickupCooldown -= dt;
                     } else {
                         const checkPickup = (p) => {
-                            if (ball.position.distanceTo(p.root.position.clone().add(new THREE.Vector3(0, 1.4, 0))) < 1.4) {
+                            if (ball.position.distanceTo(p.root.position.clone().add(new THREE.Vector3(0, 1.3, 0))) < 1.3) {
                                 ballOwner = p;
                             }
                         };
@@ -348,8 +394,20 @@
                         team2.forEach(checkPickup);
                     }
                 } else {
+                    // 🛠️ 볼 스틸(가로채기) 시스템 동작부 구현
+                    const opponents = team1.includes(ballOwner) ? team2 : team1;
+                    if (stealCooldown <= 0) {
+                        opponents.forEach(p => {
+                            // 상대편이 소유자 몸체 판정 안으로 침투하면 소유권 박탈 후 강제 전환
+                            if (ball.position.distanceTo(p.root.position.clone().add(new THREE.Vector3(0, 1.3, 0))) < 1.1) {
+                                ballOwner = p;
+                                stealCooldown = 0.2; // 난전 끔뻑임 에러 방지 락 설치
+                            }
+                        });
+                    }
+
                     let side = team1.includes(ballOwner) ? 1 : -1;
-                    ball.position.set(ballOwner.root.position.x + (side * 0.45), ballOwner.root.position.y + 1.5, 0);
+                    ball.position.set(ballOwner.root.position.x + (side * 0.45), ballOwner.root.position.y + 1.4, 0);
                     ballVel.set(0, 0, 0);
                 }
 
