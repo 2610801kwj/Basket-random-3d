@@ -9,15 +9,15 @@
         #ui {
             position: absolute; top: 20px; width: 100%; text-align: center;
             color: white; font-size: 40px; font-weight: bold; text-shadow: 3px 3px 0px #000;
-            pointer-events: none; user-select: none;
+            pointer-events: none; user-select: none; z-index: 10;
         }
         #info-text {
             position: absolute; top: 80px; width: 100%; text-align: center;
-            color: #fffdd0; font-size: 20px; font-weight: bold; text-shadow: 2px 2px 0px #000;
+            color: #fffdd0; font-size: 20px; font-weight: bold; text-shadow: 2px 2px 0px #000; z-index: 10;
         }
         #instructions {
             position: absolute; bottom: 20px; width: 100%; text-align: center;
-            color: white; font-size: 16px; text-shadow: 1px 1px 2px #000;
+            color: white; font-size: 16px; text-shadow: 1px 1px 2px #000; z-index: 10;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -29,105 +29,386 @@
     <div id="instructions">화면 클릭 또는 [Spacebar] : 점프 및 무작위 슛</div>
 
     <script>
-        // 1. 기본 시스템 세팅
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 4.5, 11);
-        camera.lookAt(0, 2.5, 0);
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        document.body.appendChild(renderer.domElement);
-
-        // 조명 세팅
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
-        scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-        dirLight.position.set(5, 15, 7);
-        dirLight.castShadow = true;
-        scene.add(dirLight);
-
-        // 맵 바닥 메쉬
-        const floorGeo = new THREE.BoxGeometry(20, 0.5, 4);
-        const floorMat = new THREE.MeshStandardMaterial();
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.position.y = -0.25;
-        floor.receiveShadow = true;
-        scene.add(floor);
-
-        // 2. 오브젝트 그룹 생성
-        let leftGoalGroup = new THREE.Group();
-        let rightGoalGroup = new THREE.Group();
-        scene.add(leftGoalGroup);
-        scene.add(rightGoalGroup);
-
-        let leftRim, rightRim;
-        let currentGoalType = "Normal";
-        let currentBallType = "Basketball";
-        let goalMoveTimer = 0;
-
-        // 3. 캐릭터 생성 및 외형 설정
-        function createCharacterGroup(color, xPos) {
-            const rootGroup = new THREE.Group();
-            rootGroup.position.set(xPos, 0, 0);
-            scene.add(rootGroup);
-
-            const charGroup = new THREE.Group();
-            rootGroup.add(charGroup);
-
-            // 긴 몸통
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.3, 0.5), new THREE.MeshStandardMaterial({ color: color }));
-            body.position.y = 0.95;
-            charGroup.add(body);
-
-            // 머리
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
-            head.position.y = 1.8;
-            charGroup.add(head);
-
-            // 만세 팔
-            const arm = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.9, 0.16), new THREE.MeshStandardMaterial({ color: color }));
-            arm.position.set(0, 1.5, 0);
-            charGroup.add(arm);
-
-            const costumeGroup = new THREE.Group();
-            charGroup.add(costumeGroup);
-
-            return { root: rootGroup, mesh: charGroup, arm: arm, costume: costumeGroup, color: color, velY:0, velX:0, rotVel:0, isGrounded:true };
-        }
-
-        const p1 = createCharacterGroup(0x2255ff, -3.5); // 블루팀
-        const p2 = createCharacterGroup(0xff3333, 3.5);  // 레드팀
-
-        // 4. [사람 종류 5종 설정]
-        function changeCharacterCostume(char, type) {
-            while(char.costume.children.length > 0) char.costume.remove(char.costume.children[0]);
-
-            if (type === "FancyHat") { // 1. 신사 모자
-                const topHat = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.4), new THREE.MeshStandardMaterial({ color: 0x111111 }));
-                topHat.position.set(0, 2.3, 0);
-                const brim = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.05, 0.65), new THREE.MeshStandardMaterial({ color: 0x111111 }));
-                brim.position.set(0, 2.1, 0);
-                char.costume.add(topHat, brim);
-            } else if (type === "AfroHair") { // 2. 폭탄 머리 가발
-                const hair = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 12), new THREE.MeshStandardMaterial({ color: 0xffaa00 }));
-                hair.position.set(0, 2.1, 0);
-                char.costume.add(hair);
-            } else if (type === "Crown") { // 3. 황금 왕관
-                const crown = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.4, 5), new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8 }));
-                crown.position.set(0, 2.2, 0);
-                char.costume.add(crown);
-            } else if (type === "LongBody") { // 4. 롱다리/롱몸통 기형 스타일
-                char.mesh.scale.set(1, 1.4, 1);
-            } else {
-                char.mesh.scale.set(1, 1, 1); // 5. 기본형
+        // 라이브러리가 로드 완료된 후 실행되도록 보장
+        window.addEventListener('DOMContentLoaded', () => {
+            if (typeof THREE === 'undefined') {
+                document.getElementById('info-text').innerText = "Three.js 로드 실패! 인터넷 연결을 확인하세요.";
+                return;
             }
-        }
 
-        // 5. 공 데이터 정의
-        const ball = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 16), new THREE.MeshStandardMaterial());
-        scene.add(ball);
-        let ballVel = new THREE.Vector3();
-        let ballState = "free";
-        let p
+            // 1. 기본 시스템 세팅
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 4.5, 11);
+            camera.lookAt(0, 2.5, 0);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // 조명 세팅
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            dirLight.position.set(5, 15, 7);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            // 바닥 메쉬
+            const floorGeo = new THREE.BoxGeometry(20, 0.5, 4);
+            const floorMat = new THREE.MeshStandardMaterial();
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.position.y = -0.25;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // 2. 오브젝트 그룹 생성
+            let leftGoalGroup = new THREE.Group();
+            let rightGoalGroup = new THREE.Group();
+            scene.add(leftGoalGroup);
+            scene.add(rightGoalGroup);
+
+            let leftRim, rightRim;
+            let currentGoalType = "Normal";
+            let currentBallType = "Basketball";
+            let goalMoveTimer = 0;
+
+            // 3. 캐릭터 생성 함수
+            function createCharacterGroup(color, xPos) {
+                const rootGroup = new THREE.Group();
+                rootGroup.position.set(xPos, 0, 0);
+                scene.add(rootGroup);
+
+                const charGroup = new THREE.Group();
+                rootGroup.add(charGroup);
+
+                const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.3, 0.5), new THREE.MeshStandardMaterial({ color: color }));
+                body.position.y = 0.95;
+                charGroup.add(body);
+
+                const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
+                head.position.y = 1.8;
+                charGroup.add(head);
+
+                const arm = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.9, 0.16), new THREE.MeshStandardMaterial({ color: color }));
+                arm.position.set(0, 1.5, 0);
+                charGroup.add(arm);
+
+                const costumeGroup = new THREE.Group();
+                charGroup.add(costumeGroup);
+
+                return { root: rootGroup, mesh: charGroup, arm: arm, costume: costumeGroup, color: color, velY:0, velX:0, rotVel:0, isGrounded:true };
+            }
+
+            const p1 = createCharacterGroup(0x2255ff, -3.5);
+            const p2 = createCharacterGroup(0xff3333, 3.5);
+
+            // 코스튬 변경
+            function changeCharacterCostume(char, type) {
+                while(char.costume.children.length > 0) char.costume.remove(char.costume.children[0]);
+
+                if (type === "FancyHat") {
+                    const topHat = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.4), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+                    topHat.position.set(0, 2.3, 0);
+                    const brim = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.05, 0.65), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+                    brim.position.set(0, 2.1, 0);
+                    char.costume.add(topHat, brim);
+                } else if (type === "AfroHair") {
+                    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 12), new THREE.MeshStandardMaterial({ color: 0xffaa00 }));
+                    hair.position.set(0, 2.1, 0);
+                    char.costume.add(hair);
+                } else if (type === "Crown") {
+                    const crown = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.4, 5), new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8 }));
+                    crown.position.set(0, 2.2, 0);
+                    char.costume.add(crown);
+                } else if (type === "LongBody") {
+                    char.mesh.scale.set(1, 1.4, 1);
+                } else {
+                    char.mesh.scale.set(1, 1, 1);
+                }
+            }
+
+            // 공 생성
+            const ball = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 16), new THREE.MeshStandardMaterial());
+            scene.add(ball);
+            let ballVel = new THREE.Vector3();
+            let ballState = "free";
+            let p1Score = 0, p2Score = 0;
+
+            // 골대 빌드
+            function buildGoals(type) {
+                while(leftGoalGroup.children.length > 0) leftGoalGroup.remove(leftGoalGroup.children[0]);
+                while(rightGoalGroup.children.length > 0) rightGoalGroup.remove(rightGoalGroup.children[0]);
+
+                currentGoalType = type;
+                leftGoalGroup.position.set(-8.5, 0, 0);
+                rightGoalGroup.position.set(8.5, 0, 0);
+
+                let pHeight = 4.2;   
+                let rHeight = 3.4;   
+                let rRadius = 0.32;  
+                let pColor = 0xdddddd;
+
+                if (type === "Mini") {         
+                    pHeight = 2.4; rHeight = 1.8; rRadius = 0.22;
+                } else if (type === "Giant") {  
+                    pHeight = 5.5; rHeight = 4.5; rRadius = 0.6;
+                } else if (type === "TrashCan") { 
+                    pColor = 0x556655; pHeight = 1.5; rHeight = 1.5; rRadius = 0.4;
+                }
+
+                function makeOne(group, isLeft) {
+                    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, pHeight), new THREE.MeshStandardMaterial({ color: pColor }));
+                    pole.position.y = pHeight / 2;
+                    group.add(pole);
+
+                    if (type !== "TrashCan") {
+                        const board = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.3 * (rRadius/0.32), 1.8 * (rRadius/0.32)), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+                        board.position.set(isLeft ? 0.4 : -0.4, pHeight, 0);
+                        group.add(board);
+                    }
+
+                    const rim = new THREE.Mesh(new THREE.TorusGeometry(rRadius, 0.035, 8, 24), new THREE.MeshStandardMaterial({ color: type === "TrashCan" ? 0x333333 : 0xff4500 }));
+                    rim.rotation.x = Math.PI / 2;
+                    rim.position.set(isLeft ? (type==="TrashCan"?0:0.6) : (type==="TrashCan"?0:-0.6), rHeight, 0);
+                    group.add(rim);
+
+                    return rim;
+                }
+
+                leftRim = makeOne(leftGoalGroup, true);
+                rightRim = makeOne(rightGoalGroup, false);
+            }
+
+            // 공 타입 변경
+            function changeBallType(type) {
+                currentBallType = type;
+                ball.material.metalness = 0;
+                ball.material.roughness = 0.4;
+                ball.geometry.dispose(); // 기존 지오메트리 메모리 해제
+
+                if (type === "Basketball") {
+                    ball.geometry = new THREE.SphereGeometry(0.26, 16, 16);
+                    ball.material.color.setHex(0xff6600);
+                } else if (type === "Soccer") {
+                    ball.geometry = new THREE.SphereGeometry(0.25, 16, 16);
+                    ball.material.color.setHex(0xffffff);
+                } else if (type === "Bowling") {
+                    ball.geometry = new THREE.SphereGeometry(0.28, 16, 16);
+                    ball.material.color.setHex(0x221144);
+                } else if (type === "Gold") {
+                    ball.geometry = new THREE.SphereGeometry(0.26, 16, 16);
+                    ball.material.color.setHex(0xffd700);
+                    ball.material.metalness = 0.9;
+                    ball.material.roughness = 0.1;
+                } else if (type === "Rugby") {
+                    ball.geometry = new THREE.SphereGeometry(0.26, 16, 16);
+                    ball.geometry.scale(1.5, 1, 1);
+                    ball.material.color.setHex(0x8B4513);
+                }
+            }
+
+            // 테마 설정
+            function changeMapTheme() {
+                const themes = ["Gym", "Ice", "Beach", "Street", "Dark"];
+                const rTheme = themes[Math.floor(Math.random() * themes.length)];
+
+                if (rTheme === "Ice") {
+                    scene.background.setHex(0xd0e8f5);
+                    floor.material.color.setHex(0xffffff);
+                    floor.material.roughness = 0.05;
+                } else if (rTheme === "Beach") {
+                    scene.background.setHex(0xffdb7d);
+                    floor.material.color.setHex(0xdfb76c);
+                    floor.material.roughness = 0.9;
+                } else if (rTheme === "Street") {
+                    scene.background.setHex(0x555566);
+                    floor.material.color.setHex(0x333333);
+                    floor.material.roughness = 0.7;
+                } else if (rTheme === "Dark") {
+                    scene.background.setHex(0x111122);
+                    floor.material.color.setHex(0x151525);
+                    floor.material.roughness = 0.4;
+                } else {
+                    scene.background.setHex(0x70c5ce);
+                    floor.material.color.setHex(0x8B5A2B);
+                    floor.material.roughness = 0.3;
+                }
+                return rTheme;
+            }
+
+            // 라운드 리셋
+            function resetRound() {
+                const mapName = changeMapTheme();
+
+                const ballTypes = ["Basketball", "Soccer", "Bowling", "Gold", "Rugby"];
+                const rBall = ballTypes[Math.floor(Math.random() * ballTypes.length)];
+                changeBallType(rBall);
+
+                const goalTypes = ["Normal", "Mini", "Giant", "TrashCan", "Moving"];
+                const rGoal = goalTypes[Math.floor(Math.random() * goalTypes.length)];
+                buildGoals(rGoal);
+
+                const costumeTypes = ["Normal", "FancyHat", "AfroHair", "Crown", "LongBody"];
+                changeCharacterCostume(p1, costumeTypes[Math.floor(Math.random() * costumeTypes.length)]);
+                changeCharacterCostume(p2, costumeTypes[Math.floor(Math.random() * costumeTypes.length)]);
+
+                document.getElementById('info-text').innerText = `테마: ${mapName} | 공: ${rBall} | 골대: ${rGoal}`;
+
+                p1.root.position.set(-3.5, 0, 0); p1.mesh.rotation.z = 0; p1.velX = 0; p1.velY = 0;
+                p2.root.position.set(3.5, 0, 0);  p2.mesh.rotation.z = 0; p2.velX = 0; p2.velY = 0;
+                
+                ball.position.set(0, 4.5, 0);
+                ballVel.set((Math.random() - 0.5) * 3, 2, 0);
+                ballState = "free";
+            }
+
+            resetRound();
+
+            // 입력 이벤트
+            function triggerRandomAction() {
+                if (p1.isGrounded) {
+                    p1.velY = 7 + Math.random() * 5;
+                    p1.velX = 1.5 + Math.random() * 4.5;
+                    p1.rotVel = (Math.random() - 0.2) * 6; 
+                    p1.isGrounded = false;
+                    if (ballState === "p1") {
+                        ballState = "free";
+                        let pY = 5.5 + Math.random() * 4;
+                        if (currentBallType === "Bowling") pY -= 2.5;
+                        if (currentBallType === "Gold") pY += 3.0;
+                        ballVel.set(4.5 + Math.random()*5, pY, 0);
+                    }
+                }
+                if (p2.isGrounded) {
+                    p2.velY = 7 + Math.random() * 5;
+                    p2.velX = -(1.5 + Math.random() * 4.5);
+                    p2.rotVel = -(Math.random() - 0.2) * 6;
+                    p2.isGrounded = false;
+                    if (ballState === "p2") {
+                        ballState = "free";
+                        let pY = 5.5 + Math.random() * 4;
+                        if (currentBallType === "Bowling") pY -= 2.5;
+                        if (currentBallType === "Gold") pY += 3.0;
+                        ballVel.set(-(4.5 + Math.random()*5), pY, 0);
+                    }
+                }
+            }
+
+            window.addEventListener('click', triggerRandomAction);
+            window.addEventListener('keydown', (e) => { if(e.code === 'Space') triggerRandomAction(); });
+
+            // 물리 연산 루프
+            const gravity = -17;
+            const dt = 0.016;
+
+            function updatePhysics(char) {
+                if (!char.isGrounded) {
+                    char.velY += gravity * dt;
+                    char.root.position.y += char.velY * dt;
+                    char.root.position.x += char.velX * dt;
+                    char.mesh.rotation.z += char.rotVel * dt;
+
+                    char.arm.position.y = 1.5 + Math.sin(Date.now() * 0.025) * 0.35;
+                    char.arm.rotation.z = Math.cos(Date.now() * 0.025) * 0.6;
+                }
+
+                if (char.root.position.y <= 0) {
+                    char.root.position.y = 0;
+                    char.mesh.rotation.z = 0;
+                    char.velY = 0; char.velX = 0; char.rotVel = 0;
+                    char.isGrounded = true;
+                    char.arm.position.set(0, 1.5, 0);
+                    char.arm.rotation.z = 0;
+                }
+
+                if(char.root.position.x < -9) char.root.position.x = -9;
+                if(char.root.position.x > 9) char.root.position.x = 9;
+            }
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                updatePhysics(p1);
+                updatePhysics(p2);
+
+                if (currentGoalType === "Moving") {
+                    goalMoveTimer += dt * 2;
+                    const moveOffset = Math.sin(goalMoveTimer) * 1.5;
+                    leftGoalGroup.position.y = moveOffset > 0 ? moveOffset : 0;
+                    rightGoalGroup.position.y = moveOffset < 0 ? -moveOffset : 0;
+                } else {
+                    leftGoalGroup.position.y = 0;
+                    rightGoalGroup.position.y = 0;
+                }
+
+                if (ballState === "free") {
+                    let ballGravity = gravity;
+                    if (currentBallType === "Bowling") ballGravity *= 1.8;
+                    if (currentBallType === "Gold") ballGravity *= 0.6;
+
+                    ballVel.y += ballGravity * dt;
+                    ball.position.x += ballVel.x * dt;
+                    ball.position.y += ballVel.y * dt;
+
+                    let bounce = 0.75;
+                    if (currentBallType === "Bowling") bounce = 0.25;
+                    if (currentBallType === "Soccer") bounce = 0.9;
+
+                    if (ball.position.y <= 0.25) {
+                        ball.position.y = 0.25;
+                        ballVel.y = -ballVel.y * bounce;
+                        
+                        if (currentBallType === "Rugby") {
+                            ballVel.x += (Math.random() - 0.5) * 4;
+                        } else {
+                            ballVel.x *= 0.92;
+                        }
+                    }
+                    
+                    if (Math.abs(ball.position.x) > 9.5) {
+                        ballVel.x = -ballVel.x * 0.75;
+                    }
+
+                    if (ball.position.distanceTo(p1.root.position.clone().add(new THREE.Vector3(0,1.1,0))) < 1.3) ballState = "p1";
+                    if (ball.position.distanceTo(p2.root.position.clone().add(new THREE.Vector3(0,1.1,0))) < 1.3) ballState = "p2";
+
+                } else if (ballState === "p1") {
+                    ball.position.set(p1.root.position.x + 0.45, p1.root.position.y + 1.6, 0);
+                } else if (ballState === "p2") {
+                    ball.position.set(p2.root.position.x - 0.45, p2.root.position.y + 1.6, 0);
+                }
+
+                const leftRimPos = leftGoalGroup.position.clone().add(leftRim.position);
+                const rightRimPos = rightGoalGroup.position.clone().add(rightRim.position);
+
+                let scoreRadius = 0.5;
+                if (currentGoalType === "Mini") scoreRadius = 0.35;
+                if (currentGoalType === "Giant") scoreRadius = 0.8;
+
+                if (ball.position.distanceTo(leftRimPos) < scoreRadius && ballVel.y < 0) {
+                    p2Score++;
+                    document.getElementById('p2-score').innerText = p2Score;
+                    resetRound();
+                }
+                if (ball.position.distanceTo(rightRimPos) < scoreRadius && ballVel.y < 0) {
+                    p1Score++;
+                    document.getElementById('p1-score').innerText = p1Score;
+                    resetRound();
+                }
+
+                renderer.render(scene, camera);
+            }
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            animate();
+        });
+    </script>
+</body>
+</html>
