@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basket Random 3D - English Info Setup</title>
+    <title>Basket Random 3D - Arcade Premium Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #0b0c10; font-family: 'Arial Black', sans-serif; user-select: none; }
         
@@ -29,15 +29,22 @@
         .menu-btn:active { transform: translateY(6px); box-shadow: none; }
         
         #game-ui { display: none; pointer-events: none; }
+        
         #ui {
-            position: absolute; top: 15px; width: 100%; text-align: center;
-            color: white; font-size: 52px; font-weight: bold; text-shadow: 4px 4px 0px #000; z-index: 10;
+            position: absolute; top: 12px; width: 100%; text-align: center;
+            color: white; font-size: 54px; font-weight: bold; text-shadow: 4px 4px 0px #000; z-index: 10;
         }
-        #info-text {
-            position: absolute; top: 95px; width: 100%; text-align: center;
-            color: #ffdd44; font-size: 18px; font-weight: bold; text-shadow: 2px 2px 0px #000; z-index: 10;
-            letter-spacing: 0.5px;
+
+        /* 세련되게 다듬은 가로 오버레이 스태터스 바 */
+        #info-bar {
+            position: absolute; top: 92px; left: 50%; transform: translateX(-50%);
+            background: rgba(20, 24, 38, 0.85); border: 2px solid #00ffcc; border-radius: 30px;
+            padding: 8px 32px; display: flex; gap: 20px; align-items: center;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4); z-index: 10;
         }
+        .info-segment { color: #fff; font-family: sans-serif; font-size: 13px; font-weight: 800; letter-spacing: 1px; }
+        .info-value { color: #00ffcc; margin-left: 5px; }
+
         .control-box {
             position: absolute; bottom: 20px; width: 240px; padding: 15px;
             background: rgba(0, 0, 0, 0.85); border-radius: 14px; color: white;
@@ -54,7 +61,7 @@
 
     <div id="menu">
         <h1>BASKET RANDOM 3D</h1>
-        <p>English Live Status Tracker Overlay Enabled</p>
+        <p>Arcade HUD Engine & Balanced Bonus Ball Active</p>
         <button class="menu-btn" onclick="startGame(1)">1 PLAYER (vs AI)</button>
         <button class="menu-btn" onclick="startGame(2)" style="background:#2255ff; box-shadow: 0 6px 0 #1133aa;">2 PLAYERS</button>
     </div>
@@ -68,7 +75,14 @@
 
     <div id="game-ui">
         <div id="ui"><span id="p1-score">0</span> : <span id="p2-score">0</span></div>
-        <div id="info-text">Preparing Stadium...</div>
+        
+        <div id="info-bar">
+            <div class="info-segment">MODIFIERS<span id="info-body" class="info-value">-</span></div>
+            <div class="info-segment" style="color:#aaa;">|</div>
+            <div class="info-segment">BALL<span id="info-ball" class="info-value">-</span></div>
+            <div class="info-segment" style="color:#aaa;">|</div>
+            <div class="info-segment">COURT<span id="info-court" class="info-value">-</span></div>
+        </div>
         
         <div id="p1-controls" class="control-box">
             <h3 style="color: #6688ff; margin:0 0 8px 0;">Blue Team (1P)</h3>
@@ -89,6 +103,10 @@
         const keys = {};
         const prevKeys = {}; 
 
+        // 2점 볼 제어 메커니즘 전역 변수
+        let rainbowCountThisGame = 0; 
+        let roundsSinceLastRainbow = 99;
+
         window.addEventListener('keydown', (e) => { 
             let k = e.key.toLowerCase();
             if(e.key === "ArrowUp") k = "arrowup";
@@ -108,6 +126,8 @@
         function startGame(mode) {
             gameMode = mode;
             p1Score = 0; p2Score = 0;
+            rainbowCountThisGame = 0;
+            roundsSinceLastRainbow = 99;
             document.getElementById('p1-score').innerText = "0";
             document.getElementById('p2-score').innerText = "0";
             document.getElementById('menu').style.display = 'none';
@@ -120,6 +140,8 @@
 
         function resetGame() {
             p1Score = 0; p2Score = 0;
+            rainbowCountThisGame = 0;
+            roundsSinceLastRainbow = 99;
             document.getElementById('p1-score').innerText = "0";
             document.getElementById('p2-score').innerText = "0";
             document.getElementById('game-over').style.display = 'none';
@@ -291,11 +313,24 @@
                 createPlayer(0xbb0000, 6.5, false, roundHead, roundArm, roundLeg)
             ];
 
-            const bTypes = ["Basketball", "Soccer", "Bowling", "Rainbow"];
+            // 🛠️ 2점볼(Rainbow) 엄격 제한 로직: 한 게임에 최대 1번만, 연달아 나올 수 없음
+            let bTypes = ["Basketball", "Soccer", "Bowling"];
+            roundsSinceLastRainbow++;
+
+            if (rainbowCountThisGame < 1 && roundsSinceLastRainbow >= 2) {
+                if (Math.random() < 0.25) { 
+                    bTypes.push("Rainbow");
+                }
+            }
+
             currentBallType = bTypes[Math.floor(Math.random() * bTypes.length)];
             ballMaterial.metalness = 0.0; ballMaterial.roughness = 0.3;
 
-            if(currentBallType === "Rainbow") ballMaterial.color.setHex(0xffffff);
+            if(currentBallType === "Rainbow") { 
+                ballMaterial.color.setHex(0xffffff);
+                rainbowCountThisGame++;
+                roundsSinceLastRainbow = 0;
+            }
             else if(currentBallType === "Soccer") ballMaterial.color.setHex(0xffffff);
             else if(currentBallType === "Bowling") { ballMaterial.color.setHex(0x5a6075); ballMaterial.metalness = 0.8; ballMaterial.roughness = 0.05; }
             else ballMaterial.color.setHex(0xff6600);
@@ -304,21 +339,29 @@
             currentGoalType = gTypes[Math.floor(Math.random() * gTypes.length)];
             buildGoals(currentGoalType === "Moving" ? "Normal" : currentGoalType);
 
-            const mapStyles = ["Normal", "Ice", "Mud"];
+            // 🛠️ 배경(스타디움 스타일)을 총 5종으로 대폭 확장
+            const mapStyles = ["Normal", "Ice", "Mud", "CyberPunk", "RetroGold"];
             currentCourtType = mapStyles[Math.floor(Math.random() * mapStyles.length)];
             
-            if(currentCourtType === "Ice") { courtMaterial.color.setHex(0xa3e5ff); courtMaterial.roughness = 0.02; scene.background.setHex(0x0a141d); }
-            else if(currentCourtType === "Mud") { courtMaterial.color.setHex(0x6e503b); courtMaterial.roughness = 0.9; scene.background.setHex(0x14100d); }
-            else { courtMaterial.color.setHex(0xf09351); courtMaterial.roughness = 0.3; scene.background.setHex(0x11131c); }
+            if(currentCourtType === "Ice") { 
+                courtMaterial.color.setHex(0xa3e5ff); courtMaterial.roughness = 0.02; scene.background.setHex(0x0a141d); 
+            } else if(currentCourtType === "Mud") { 
+                courtMaterial.color.setHex(0x6e503b); courtMaterial.roughness = 0.9; scene.background.setHex(0x14100d); 
+            } else if(currentCourtType === "CyberPunk") { 
+                courtMaterial.color.setHex(0xff0055); courtMaterial.roughness = 0.15; scene.background.setHex(0x0f051d); 
+            } else if(currentCourtType === "RetroGold") { 
+                courtMaterial.color.setHex(0xcca300); courtMaterial.roughness = 0.4; scene.background.setHex(0x1c1a0f); 
+            } else { 
+                courtMaterial.color.setHex(0xf09351); courtMaterial.roughness = 0.3; scene.background.setHex(0x11131c); 
+            }
 
-            // 🛠️ 한글 번역부를 깔끔한 영문 대문자 키워드로 매칭 변경
-            let headEn = {"basic":"NORMAL HEAD", "small":"MINI HEAD", "big":"BIG HEAD"}[roundHead];
-            let armEn = {"basic":"NORMAL ARMS", "short":"SHORT ARMS", "long":"LONG ARMS"}[roundArm];
-            let legEn = {"basic":"NORMAL LEGS", "short":"SHORT LEGS", "long":"LONG LEGS"}[roundLeg];
+            let headEn = {"basic":"NORMAL", "small":"MINI", "big":"BIG"}[roundHead];
+            let legEn = {"basic":"NORMAL", "short":"SHORT", "long":"LONG"}[roundLeg];
             
-            // 상단 레이아웃에 배치, 공과 코트 스타일까지 완벽히 영문 텍스트 연동
-            document.getElementById('info-text').innerText = 
-                `Match Setup: [${headEn} + ${armEn} + ${legEn}] | Ball: ${currentBallType} | Court: ${currentCourtType}`;
+            // 🛠️ 가독성 높게 설계된 분할 파싱 구조로 HUD 업그레이드
+            document.getElementById('info-body').innerText = `${headEn} H + ${legEn} L`;
+            document.getElementById('info-ball').innerText = currentBallType.toUpperCase();
+            document.getElementById('info-court').innerText = currentCourtType.toUpperCase();
             
             ball.position.set(0, 6.0, 0);
             ballVel.set((Math.random() - 0.5) * 3, 3.5, 0);
@@ -485,11 +528,9 @@
                         }
                     }
 
-                    // 🛠️ 장외 무승부 발생 시 안내문구도 깔끔한 영어로 출력
                     if (Math.abs(ball.position.x) > 12.4 && !isTransitioning) {
                         isTransitioning = true;
-                        document.getElementById('info-text').innerText = "OUT OF BOUNDS! DRAW MATCH - Reloading Proportions";
-                        setTimeout(resetRound, 1200); 
+                        setTimeout(resetRound, 1000); 
                     }
 
                     if (pickupCooldown > 0) { pickupCooldown -= dt; } else {
