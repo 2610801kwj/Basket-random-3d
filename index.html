@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basket Random 3D - Arcade Premium Edition</title>
+    <title>Basket Random 3D - Power Charge Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #0b0c10; font-family: 'Arial Black', sans-serif; user-select: none; }
         
@@ -35,7 +35,6 @@
             color: white; font-size: 54px; font-weight: bold; text-shadow: 4px 4px 0px #000; z-index: 10;
         }
 
-        /* 세련되게 다듬은 가로 오버레이 스태터스 바 */
         #info-bar {
             position: absolute; top: 92px; left: 50%; transform: translateX(-50%);
             background: rgba(20, 24, 38, 0.85); border: 2px solid #00ffcc; border-radius: 30px;
@@ -61,7 +60,7 @@
 
     <div id="menu">
         <h1>BASKET RANDOM 3D</h1>
-        <p>Arcade HUD Engine & Balanced Bonus Ball Active</p>
+        <p>Hold Jump Key for Power Shot Mechanic</p>
         <button class="menu-btn" onclick="startGame(1)">1 PLAYER (vs AI)</button>
         <button class="menu-btn" onclick="startGame(2)" style="background:#2255ff; box-shadow: 0 6px 0 #1133aa;">2 PLAYERS</button>
     </div>
@@ -87,13 +86,13 @@
         <div id="p1-controls" class="control-box">
             <h3 style="color: #6688ff; margin:0 0 8px 0;">Blue Team (1P)</h3>
             <div>⬅️ Move : <span class="key-badge">A</span> , <span class="key-badge">D</span></div>
-            <div>▲ Jump & Shoot : <span class="key-badge">W</span></div>
+            <div>▲ Jump & Hold : <span class="key-badge">W</span> (Long Shot)</div>
         </div>
 
         <div id="p2-controls" class="control-box">
             <h3 style="color: #ff6666; margin:0 0 8px 0;">Red Team (2P)</h3>
             <div>⬅️ Move : <span class="key-badge">←</span> , <span class="key-badge">→</span></div>
-            <div>▲ Jump & Shoot : <span class="key-badge">↑</span></div>
+            <div>▲ Jump & Hold : <span class="key-badge">↑</span> (Long Shot)</div>
         </div>
     </div>
 
@@ -101,9 +100,13 @@
         let gameMode = 1;
         let gameStarted = false;
         const keys = {};
-        const prevKeys = {}; 
 
-        // 2점 볼 제어 메커니즘 전역 변수
+        // 차징 메커니즘용 타이머 변수
+        let p1ChargeTime = 0;
+        let p2ChargeTime = 0;
+        let p1IsCharging = false;
+        let p2IsCharging = false;
+
         let rainbowCountThisGame = 0; 
         let roundsSinceLastRainbow = 99;
 
@@ -116,11 +119,11 @@
         });
         window.addEventListener('keyup', (e) => { 
             let k = e.key.toLowerCase();
-            if(e.key === "ArrowUp") k = "arrowup";
+            if(e.key === "ArrowUp") { k = "arrowup"; triggerReleaseShoot(2); }
+            if(e.key === "W" || e.key === "w") { triggerReleaseShoot(1); }
             if(e.key === "ArrowLeft") k = "arrowleft";
             if(e.key === "ArrowRight") k = "arrowright";
             keys[k] = false; 
-            prevKeys[k] = false;
         });
 
         function startGame(mode) {
@@ -296,6 +299,9 @@
             team1.forEach(p => scene.remove(p.root));
             team2.forEach(p => scene.remove(p.root));
             
+            p1ChargeTime = 0; p2ChargeTime = 0;
+            p1IsCharging = false; p2IsCharging = false;
+
             const headOptions = ["basic", "small", "big"];
             const armOptions = ["basic", "short", "long"];
             const legOptions = ["basic", "short", "long"];
@@ -313,7 +319,6 @@
                 createPlayer(0xbb0000, 6.5, false, roundHead, roundArm, roundLeg)
             ];
 
-            // 🛠️ 2점볼(Rainbow) 엄격 제한 로직: 한 게임에 최대 1번만, 연달아 나올 수 없음
             let bTypes = ["Basketball", "Soccer", "Bowling"];
             roundsSinceLastRainbow++;
 
@@ -339,7 +344,6 @@
             currentGoalType = gTypes[Math.floor(Math.random() * gTypes.length)];
             buildGoals(currentGoalType === "Moving" ? "Normal" : currentGoalType);
 
-            // 🛠️ 배경(스타디움 스타일)을 총 5종으로 대폭 확장
             const mapStyles = ["Normal", "Ice", "Mud", "CyberPunk", "RetroGold"];
             currentCourtType = mapStyles[Math.floor(Math.random() * mapStyles.length)];
             
@@ -358,7 +362,6 @@
             let headEn = {"basic":"NORMAL", "small":"MINI", "big":"BIG"}[roundHead];
             let legEn = {"basic":"NORMAL", "short":"SHORT", "long":"LONG"}[roundLeg];
             
-            // 🛠️ 가독성 높게 설계된 분할 파싱 구조로 HUD 업그레이드
             document.getElementById('info-body').innerText = `${headEn} H + ${legEn} L`;
             document.getElementById('info-ball').innerText = currentBallType.toUpperCase();
             document.getElementById('info-court').innerText = currentCourtType.toUpperCase();
@@ -368,17 +371,42 @@
             ballOwner = null; pickupCooldown = 0; stealCooldown = 0;
         }
 
-        function shoot(player, dirSign) {
+        // 🛠️ 차징 가중치가 포함된 슈팅 로직 변경
+        function shoot(player, dirSign, chargeRatio = 0) {
             ballOwner = null; pickupCooldown = 0.4; 
-            let powerX = 14.8; let powerY = 9.8;
-            if(currentBallType === "Bowling") { powerX = 10.2; powerY = 6.8; } 
-            if(currentBallType === "Soccer") { powerX = 17.5; powerY = 12.0; } 
-            if(currentBallType === "Rainbow") { powerX = 15.8; powerY = 10.5; } 
+            
+            // 기본 파워 정의
+            let basePowerX = 11.5; 
+            let basePowerY = 8.5;
+            
+            // 차징 보너스 계수 적용 (최대 1.8배 더 강력하게 발사됨)
+            let chargeMultiplier = 1.0 + (chargeRatio * 0.8);
 
-            if(currentGoalType === "Mini") { powerX *= 0.93; powerY *= 0.94; } 
-            else if(currentGoalType === "Giant") { powerX *= 1.06; powerY *= 1.12; } 
-            else if(currentGoalType === "Moving") { powerY *= 1.05; }
-            ballVel.set(dirSign * powerX, powerY, 0);
+            if(currentBallType === "Bowling") { basePowerX = 8.0; basePowerY = 5.8; } 
+            if(currentBallType === "Soccer") { basePowerX = 13.5; basePowerY = 10.0; } 
+            if(currentBallType === "Rainbow") { basePowerX = 12.0; basePowerY = 9.0; } 
+
+            if(currentGoalType === "Mini") { basePowerX *= 0.93; basePowerY *= 0.94; } 
+            else if(currentGoalType === "Giant") { basePowerX *= 1.06; basePowerY *= 1.12; } 
+            
+            ballVel.set(dirSign * basePowerX * chargeMultiplier, basePowerY * (1.0 + chargeRatio * 0.4), 0);
+        }
+
+        // 키를 떼었을 때 차징된 슛을 날리는 이벤트 함수
+        function triggerReleaseShoot(playerNum) {
+            if (playerNum === 1) {
+                if(p1IsCharging) {
+                    let ratio = Math.min(p1ChargeTime / 0.7, 1.0); // 0.7초 누르면 풀차징
+                    team1.forEach(p => { if (ballOwner === p) shoot(p, 1, ratio); });
+                    p1IsCharging = false; p1ChargeTime = 0;
+                }
+            } else if (playerNum === 2) {
+                if(p2IsCharging) {
+                    let ratio = Math.min(p2ChargeTime / 0.7, 1.0);
+                    team2.forEach(p => { if (ballOwner === p) shoot(p, -1, ratio); });
+                    p2IsCharging = false; p2ChargeTime = 0;
+                }
+            }
         }
 
         let jumpPower = 13.6; const gravity = -24.0; const dt = 0.016; let moveSpeed = 5.2;
@@ -391,13 +419,17 @@
             if (keys['a']) p1TargetVelX = -moveSpeed;
             if (keys['d']) p1TargetVelX = moveSpeed;
 
-            if (keys['w'] && !prevKeys['w']) {
-                prevKeys['w'] = true;
-                team1.forEach(p => {
-                    if (p.isGrounded) { p.velY = jumpPower; p.isGrounded = false; }
-                    if (ballOwner === p) shoot(p, 1);
-                });
+            // 🛠️ 1P W키 실시간 누르기 체크 (점프 및 차징 상태 카운트)
+            if (keys['w']) {
+                if(!p1IsCharging) {
+                    team1.forEach(p => { if (p.isGrounded) { p.velY = jumpPower; p.isGrounded = false; } });
+                    p1IsCharging = true;
+                    p1ChargeTime = 0;
+                } else {
+                    p1ChargeTime += dt;
+                }
             }
+
             team1.forEach(p => { if(currentCourtType === "Ice") p.velX += (p1TargetVelX - p.velX) * 0.06; else p.velX = p1TargetVelX; });
 
             if (gameMode === 2) {
@@ -405,15 +437,19 @@
                 if (keys['arrowleft']) p2TargetVelX = -moveSpeed;
                 if (keys['arrowright']) p2TargetVelX = moveSpeed;
 
-                if (keys['arrowup'] && !prevKeys['arrowup']) {
-                    prevKeys['arrowup'] = true;
-                    team2.forEach(p => {
-                        if (p.isGrounded) { p.velY = jumpPower; p.isGrounded = false; }
-                        if (ballOwner === p) shoot(p, -1);
-                    });
+                // 🛠️ 2P 화살표 위 키 실시간 누르기 체크
+                if (keys['arrowup']) {
+                    if(!p2IsCharging) {
+                        team2.forEach(p => { if (p.isGrounded) { p.velY = jumpPower; p.isGrounded = false; } });
+                        p2IsCharging = true;
+                        p2ChargeTime = 0;
+                    } else {
+                        p2ChargeTime += dt;
+                    }
                 }
                 team2.forEach(p => { if(currentCourtType === "Ice") p.velX += (p2TargetVelX - p.velX) * 0.06; else p.velX = p2TargetVelX; });
             } else {
+                // AI 플레이어 행동 트리
                 team2.forEach(p => {
                     let aiTargetX = 0;
                     if (ball.position.x < p.root.position.x - 0.2) aiTargetX = -moveSpeed * 0.8;
@@ -422,7 +458,10 @@
 
                     if (Math.random() < 0.025 && p.isGrounded) {
                         p.velY = jumpPower * 0.95; p.isGrounded = false;
-                        if (ballOwner === p) shoot(p, -1);
+                        if (ballOwner === p) {
+                            // AI는 무작위 파워(0% ~ 80% 차징 강도)로 변칙 슛 구사
+                            shoot(p, -1, Math.random() * 0.8);
+                        }
                     }
                 });
             }
@@ -452,7 +491,15 @@
             p.rightLeg.rotation.z += (-p.targetLegRot - p.rightLeg.rotation.z) * 0.15;
             p.pivot.position.y = p.bodyBob;
 
-            if (p.root.position.y <= 0) { p.root.position.y = 0; p.velY = 0; p.isGrounded = true; }
+            // 땅에 닿았을 때 비자발적 누르기 끊김 방지 처리
+            if (p.root.position.y <= 0) { 
+                p.root.position.y = 0; 
+                p.velY = 0; 
+                if(!p.isGrounded) {
+                    p.isGrounded = true;
+                    // 공을 쥐고 낙하 완료할 때까지 키를 안 뗐다면 자동 슛 메커니즘 가동 방지용 예외 처리
+                }
+            }
             if (p.root.position.x < -11.5) p.root.position.x = -11.5;
             if (p.root.position.x > 11.5) p.root.position.x = 11.5;
         }
