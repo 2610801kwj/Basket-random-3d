@@ -134,6 +134,8 @@
 
         // ================= SCENE SETUP & LIGHTING =================
         const scene = new THREE.Scene();
+        // 🚨 여기에 배경색 초기값을 안 넣어둬서 에러가 났었습니다! 이제 추가되었습니다.
+        scene.background = new THREE.Color(0x2a3040); 
         scene.fog = new THREE.FogExp2(0x2a3040, 0.015);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -152,8 +154,9 @@
         const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
         sunLight.position.set(10, 20, 15);
         sunLight.castShadow = true;
-        sunLight.shadow.mapSize.width = 2048; 
-        sunLight.shadow.mapSize.height = 2048;
+        // 태블릿 성능을 고려해 그림자 해상도를 살짝 조절했습니다.
+        sunLight.shadow.mapSize.width = 1024; 
+        sunLight.shadow.mapSize.height = 1024;
         sunLight.shadow.camera.near = 0.5;
         sunLight.shadow.camera.far = 50;
         sunLight.shadow.camera.left = -20;
