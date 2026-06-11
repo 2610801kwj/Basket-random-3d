@@ -54,7 +54,7 @@
         #p2-controls { right: 20px; border-color: #ff3333; }
         .key-badge { background: #444; border-radius: 4px; padding: 3px 6px; font-weight: bold; color: #fffdd0; }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.150.1/three.min.js"></script>
 </head>
 <body>
 
@@ -134,7 +134,7 @@
 
         // ================= SCENE SETUP & LIGHTING =================
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x2a3040, 0.015); // 자연스러운 거리감을 위한 안개 효과 추가
+        scene.fog = new THREE.FogExp2(0x2a3040, 0.015);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 7.5, 22); 
@@ -143,7 +143,7 @@
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true; // 그림자 활성화
+        renderer.shadowMap.enabled = true; 
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(renderer.domElement);
 
@@ -152,7 +152,7 @@
         const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
         sunLight.position.set(10, 20, 15);
         sunLight.castShadow = true;
-        sunLight.shadow.mapSize.width = 2048; // 고해상도 그림자
+        sunLight.shadow.mapSize.width = 2048; 
         sunLight.shadow.mapSize.height = 2048;
         sunLight.shadow.camera.near = 0.5;
         sunLight.shadow.camera.far = 50;
@@ -188,7 +188,6 @@
         function buildBackground(theme) {
             while(bgGroup.children.length > 0) bgGroup.remove(bgGroup.children[0]);
             
-            // 휑하지 않게 뒤쪽에 관중석/건물 느낌의 배경 구조물 절차적 생성
             for (let i = 0; i < 40; i++) {
                 let h = Math.random() * 15 + 5;
                 let w = Math.random() * 5 + 2;
@@ -255,11 +254,9 @@
             const matTeam = new THREE.MeshStandardMaterial({ color: teamColor, roughness: 0.6 });
             const matSkin = new THREE.MeshStandardMaterial({ color: chosenSkin, roughness: 0.4 });
             
-            // 직사각형 박스 대신 부드러운 캡슐(Capsule) 형태로 변경
             const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.24, baseBodyH * 0.6, 4, 16), matTeam);
             body.position.y = baseLegH + (baseBodyH / 2) + 0.1; body.castShadow = true; pivot.add(body);
 
-            // 머리를 구(Sphere) 형태로 변경
             const head = new THREE.Mesh(new THREE.SphereGeometry(headSize/2, 24, 24), matSkin);
             head.position.y = body.position.y + (baseBodyH / 2) + (headSize / 2) - 0.05; head.castShadow = true; pivot.add(head);
 
@@ -278,7 +275,6 @@
             const rightLeg = new THREE.Mesh(new THREE.CapsuleGeometry(legR, baseLegH - (legR*2), 4, 12), matSkin);
             rightLeg.position.set(0.14, baseLegH / 2, 0); rightLeg.castShadow = true; pivot.add(rightLeg);
 
-            // 신발 추가
             const shoeMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.8 });
             const shoeGeo = new THREE.CapsuleGeometry(0.12, 0.1, 4, 12);
             const leftShoe = new THREE.Mesh(shoeGeo, shoeMat);
@@ -324,7 +320,7 @@
             const gTypes = ["Normal", "Mini", "Giant", "Moving"]; currentGoalType = gTypes[Math.floor(Math.random() * gTypes.length)]; buildGoals(currentGoalType === "Moving" ? "Normal" : currentGoalType);
             const mapStyles = ["Normal", "Ice", "Mud", "CyberPunk", "RetroGold"]; currentCourtType = mapStyles[Math.floor(Math.random() * mapStyles.length)];
             
-            buildBackground(currentCourtType); // 테마에 맞춰 배경 재생성
+            buildBackground(currentCourtType); 
             
             if(currentCourtType === "Ice") { courtMaterial.color.setHex(0xa3e5ff); groundMat.color.setHex(0x334455); scene.background.setHex(0x5588aa); scene.fog.color.setHex(0x5588aa); } 
             else if(currentCourtType === "Mud") { courtMaterial.color.setHex(0x6e503b); groundMat.color.setHex(0x2b221a); scene.background.setHex(0x4a3b2c); scene.fog.color.setHex(0x4a3b2c); } 
@@ -426,7 +422,6 @@
                     let bounce = currentBallType === "Bowling" ? 0.15 : (currentBallType === "Soccer" ? 0.92 : 0.75);
                     if (ball.position.y <= 0.32) { ball.position.y = 0.32; ballVel.y = -ballVel.y * bounce; ballVel.x *= 0.96; }
                     
-                    // Invisible walls (천장 및 장외 방지)
                     if (ball.position.y > 15.0) { ball.position.y = 15.0; ballVel.y = -ballVel.y * 0.5; }
                     if (ball.position.x < -13.0) { ball.position.x = -13.0; ballVel.x = -ballVel.x * 0.5; }
                     if (ball.position.x > 13.0) { ball.position.x = 13.0; ballVel.x = -ballVel.x * 0.5; }
