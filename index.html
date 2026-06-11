@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basket Random 3D - Hitbox Absolute Fix</title>
+    <title>Basket Random 3D - Enhanced Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #0b0c10; font-family: 'Arial Black', sans-serif; user-select: none; }
         
@@ -60,7 +60,7 @@
 
     <div id="menu">
         <h1>BASKET RANDOM 3D</h1>
-        <p>Short Arm Pickup Collision Buff Patched</p>
+        <p>Enhanced Visuals & Hitbox Patch</p>
         <button class="menu-btn" onclick="startGame(1)">1 PLAYER (vs AI)</button>
         <button class="menu-btn" onclick="startGame(2)" style="background:#2255ff; box-shadow: 0 6px 0 #1133aa;">2 PLAYERS</button>
     </div>
@@ -159,10 +159,10 @@
         }
 
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x11131c);
+        scene.background = new THREE.Color(0x2a3040); // 밝아진 기본 배경색
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 6.5, 16);
+        camera.position.set(0, 6.5, 18); // 시야 조금 더 확보
         camera.lookAt(0, 3.0, 0);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -175,7 +175,7 @@
         sunLight.position.set(5, 15, 10);
         scene.add(sunLight);
 
-        const courtMaterial = new THREE.MeshStandardMaterial({ color: 0xd9742b, roughness: 0.3 });
+        const courtMaterial = new THREE.MeshStandardMaterial({ color: 0xf09351, roughness: 0.3 });
         const court = new THREE.Mesh(new THREE.BoxGeometry(26, 0.4, 6), courtMaterial);
         court.position.y = -0.2;
         scene.add(court);
@@ -204,10 +204,19 @@
             function makeNet(group, isLeft) {
                 const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, pH, 16), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
                 pole.position.y = pH / 2; group.add(pole);
+                
                 const board = new THREE.Mesh(new THREE.BoxGeometry(0.15, rimRadius*3.5, rimRadius*5), new THREE.MeshStandardMaterial({ color: 0xffffff }));
                 board.position.set(isLeft ? 0.5 : -0.5, pH - 0.3, 0); group.add(board);
+                
                 const rim = new THREE.Mesh(new THREE.TorusGeometry(rimRadius, 0.04, 8, 24), new THREE.MeshStandardMaterial({ color: 0xff4400 }));
                 rim.rotation.x = Math.PI / 2; rim.position.set(isLeft ? 0.5 + rimRadius : -0.5 - rimRadius, rH, 0); group.add(rim);
+
+                // 그물망 추가
+                const netMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.5 });
+                const net = new THREE.Mesh(new THREE.CylinderGeometry(rimRadius, rimRadius * 0.7, 0.6, 12), netMaterial);
+                net.position.set(isLeft ? 0.5 + rimRadius : -0.5 - rimRadius, rH - 0.3, 0);
+                group.add(net);
+
                 return rim.position;
             }
             leftRimPos = makeNet(leftGoalGroup, true); rightRimPos = makeNet(rightGoalGroup, false);
@@ -266,6 +275,16 @@
 
             const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(legW, baseLegH, legW), legMat);
             rightLeg.position.set(0.12, baseLegH / 2, 0); pivot.add(rightLeg);
+
+            // 신발 추가
+            const shoeMat = new THREE.MeshStandardMaterial({ color: 0xdddddd });
+            const leftShoe = new THREE.Mesh(new THREE.BoxGeometry(legW * 1.2, 0.15, legW * 1.5), shoeMat);
+            leftShoe.position.set(0, -baseLegH / 2 + 0.075, 0.05);
+            leftLeg.add(leftShoe); 
+
+            const rightShoe = new THREE.Mesh(new THREE.BoxGeometry(legW * 1.2, 0.15, legW * 1.5), shoeMat);
+            rightShoe.position.set(0, -baseLegH / 2 + 0.075, 0.05);
+            rightLeg.add(rightShoe);
 
             const totalCenterHeight = body.position.y;
 
@@ -330,13 +349,18 @@
             currentBallType = bTypes[Math.floor(Math.random() * bTypes.length)];
             ballMaterial.metalness = 0.0; ballMaterial.roughness = 0.3;
 
+            // 볼링공 색상 및 재질 밝게 수정
             if(currentBallType === "Rainbow") { 
                 ballMaterial.color.setHex(0xffffff);
                 rainbowCountThisGame++;
                 roundsSinceLastRainbow = 0;
             }
             else if(currentBallType === "Soccer") ballMaterial.color.setHex(0xffffff);
-            else if(currentBallType === "Bowling") { ballMaterial.color.setHex(0x5a6075); ballMaterial.metalness = 0.8; ballMaterial.roughness = 0.05; }
+            else if(currentBallType === "Bowling") { 
+                ballMaterial.color.setHex(0xaabbcc); 
+                ballMaterial.metalness = 0.9; 
+                ballMaterial.roughness = 0.1; 
+            }
             else ballMaterial.color.setHex(0xff6600);
 
             const gTypes = ["Normal", "Mini", "Giant", "Moving"];
@@ -346,16 +370,17 @@
             const mapStyles = ["Normal", "Ice", "Mud", "CyberPunk", "RetroGold"];
             currentCourtType = mapStyles[Math.floor(Math.random() * mapStyles.length)];
             
+            // 테마별 코트/배경색 시인성 강화
             if(currentCourtType === "Ice") { 
-                courtMaterial.color.setHex(0xa3e5ff); courtMaterial.roughness = 0.02; scene.background.setHex(0x0a141d); 
+                courtMaterial.color.setHex(0xa3e5ff); courtMaterial.roughness = 0.02; scene.background.setHex(0x5588aa); 
             } else if(currentCourtType === "Mud") { 
-                courtMaterial.color.setHex(0x6e503b); courtMaterial.roughness = 0.9; scene.background.setHex(0x14100d); 
+                courtMaterial.color.setHex(0x6e503b); courtMaterial.roughness = 0.9; scene.background.setHex(0x4a3b2c); 
             } else if(currentCourtType === "CyberPunk") { 
-                courtMaterial.color.setHex(0xff0055); courtMaterial.roughness = 0.15; scene.background.setHex(0x0f051d); 
+                courtMaterial.color.setHex(0xff0055); courtMaterial.roughness = 0.15; scene.background.setHex(0x2a0033); 
             } else if(currentCourtType === "RetroGold") { 
-                courtMaterial.color.setHex(0xcca300); courtMaterial.roughness = 0.4; scene.background.setHex(0x1c1a0f); 
+                courtMaterial.color.setHex(0xcca300); courtMaterial.roughness = 0.4; scene.background.setHex(0x443311); 
             } else { 
-                courtMaterial.color.setHex(0xf09351); courtMaterial.roughness = 0.3; scene.background.setHex(0x11131c); 
+                courtMaterial.color.setHex(0xf09351); courtMaterial.roughness = 0.3; scene.background.setHex(0x2a3040); 
             }
 
             let headEn = {"basic":"NORMAL", "small":"MINI", "big":"BIG"}[roundHead];
@@ -544,6 +569,22 @@
 
                     if (ball.position.y <= 0.3) { ball.position.y = 0.3; ballVel.y = -ballVel.y * bounce; ballVel.x *= 0.96; }
 
+                    // 천장 투명 벽 (장외 방지)
+                    if (ball.position.y > 15.0) { 
+                        ball.position.y = 15.0; 
+                        ballVel.y = -ballVel.y * 0.5; 
+                    }
+                    // 왼쪽 투명 벽
+                    if (ball.position.x < -13.0) { 
+                        ball.position.x = -13.0; 
+                        ballVel.x = -ballVel.x * 0.5; 
+                    }
+                    // 오른쪽 투명 벽
+                    if (ball.position.x > 13.0) { 
+                        ball.position.x = 13.0; 
+                        ballVel.x = -ballVel.x * 0.5; 
+                    }
+
                     let leftBoardLine = -10.5;
                     let rightBoardLine = 10.5;
                     let leftTopLimit = leftGoalGroup.position.y + currentpH + 0.6;
@@ -562,16 +603,16 @@
                         }
                     }
 
-                    if (Math.abs(ball.position.x) > 12.4 && !isTransitioning) {
+                    if (Math.abs(ball.position.x) > 13.4 && !isTransitioning) {
                         isTransitioning = true;
                         setTimeout(resetRound, 1000); 
                     }
 
-                    // 🛠️ 팔 길이(p.armScale)의 패널티를 제거하여 절대값(Absolute Radius) 1.4로 판정 상향 평준화
+                    // 🛠️ 공 줍기 판정 범위를 1.6으로 더 넓힘
                     if (pickupCooldown > 0) { pickupCooldown -= dt; } else {
                         const checkPickup = (p) => {
                             let pPos = p.root.position.clone().add(new THREE.Vector3(0, p.centerH, 0));
-                            if (ball.position.distanceTo(pPos) < 1.4) { ballOwner = p; }
+                            if (ball.position.distanceTo(pPos) < 1.6) { ballOwner = p; }
                         };
                         if(!isTransitioning) { team1.forEach(checkPickup); team2.forEach(checkPickup); }
                     }
@@ -580,12 +621,14 @@
                     if (stealCooldown <= 0) {
                         opponents.forEach(p => {
                             let pPos = p.root.position.clone().add(new THREE.Vector3(0, p.centerH, 0));
-                            // 스틸(Steal) 판정 거리도 스케일에 영향받지 않게 1.25 절대값으로 통일 고정
                             if (ball.position.distanceTo(pPos) < 1.25) { ballOwner = p; stealCooldown = 0.2; }
                         });
                     }
                     let side = team1.includes(ballOwner) ? 1 : -1;
-                    ball.position.set(ballOwner.root.position.x + (side * 0.45), ballOwner.root.position.y + ballOwner.centerH + 0.1, 0); ballVel.set(0, 0, 0);
+                    // 팔 길이에 비례하여 파지(Hold) 위치 조정 (팔이 짧으면 허공에 뜨지 않게)
+                    let holdDist = 0.2 + (ballOwner.armScale * 0.15); 
+                    ball.position.set(ballOwner.root.position.x + (side * holdDist), ballOwner.root.position.y + ballOwner.centerH + 0.1, 0); 
+                    ballVel.set(0, 0, 0);
                 }
 
                 const worldLeftRim = leftGoalGroup.position.clone().add(leftRimPos);
