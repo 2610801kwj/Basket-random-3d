@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basket Random 3D - Enhanced Edition</title>
+    <title>Basket Random 3D - High Quality Update</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #0b0c10; font-family: 'Arial Black', sans-serif; user-select: none; }
         
@@ -60,7 +60,7 @@
 
     <div id="menu">
         <h1>BASKET RANDOM 3D</h1>
-        <p>Enhanced Visuals & Hitbox Patch</p>
+        <p>Graphics & Environment Overhaul</p>
         <button class="menu-btn" onclick="startGame(1)">1 PLAYER (vs AI)</button>
         <button class="menu-btn" onclick="startGame(2)" style="background:#2255ff; box-shadow: 0 6px 0 #1133aa;">2 PLAYERS</button>
     </div>
@@ -74,7 +74,6 @@
 
     <div id="game-ui">
         <div id="ui"><span id="p1-score">0</span> : <span id="p2-score">0</span></div>
-        
         <div id="info-bar">
             <div class="info-segment">MODIFIERS<span id="info-body" class="info-value">-</span></div>
             <div class="info-segment" style="color:#aaa;">|</div>
@@ -82,13 +81,11 @@
             <div class="info-segment" style="color:#aaa;">|</div>
             <div class="info-segment">COURT<span id="info-court" class="info-value">-</span></div>
         </div>
-        
         <div id="p1-controls" class="control-box">
             <h3 style="color: #6688ff; margin:0 0 8px 0;">Blue Team (1P)</h3>
             <div>⬅️ Move : <span class="key-badge">A</span> , <span class="key-badge">D</span></div>
             <div>▲ Jump & Hold : <span class="key-badge">W</span> (Long Shot)</div>
         </div>
-
         <div id="p2-controls" class="control-box">
             <h3 style="color: #ff6666; margin:0 0 8px 0;">Red Team (2P)</h3>
             <div>⬅️ Move : <span class="key-badge">←</span> , <span class="key-badge">→</span></div>
@@ -97,104 +94,127 @@
     </div>
 
     <script>
-        let gameMode = 1;
-        let gameStarted = false;
+        let gameMode = 1, gameStarted = false;
         const keys = {};
-
-        let p1ChargeTime = 0;
-        let p2ChargeTime = 0;
-        let p1IsCharging = false;
-        let p2IsCharging = false;
-
-        let rainbowCountThisGame = 0; 
-        let roundsSinceLastRainbow = 99;
+        let p1ChargeTime = 0, p2ChargeTime = 0, p1IsCharging = false, p2IsCharging = false;
+        let rainbowCountThisGame = 0, roundsSinceLastRainbow = 99;
 
         window.addEventListener('keydown', (e) => { 
             let k = e.key.toLowerCase();
-            if(e.key === "ArrowUp") k = "arrowup";
-            if(e.key === "ArrowLeft") k = "arrowleft";
-            if(e.key === "ArrowRight") k = "arrowright";
+            if(e.key === "ArrowUp") k = "arrowup"; if(e.key === "ArrowLeft") k = "arrowleft"; if(e.key === "ArrowRight") k = "arrowright";
             keys[k] = true; 
         });
         window.addEventListener('keyup', (e) => { 
             let k = e.key.toLowerCase();
             if(e.key === "ArrowUp") { k = "arrowup"; triggerReleaseShoot(2); }
             if(e.key === "W" || e.key === "w") { triggerReleaseShoot(1); }
-            if(e.key === "ArrowLeft") k = "arrowleft";
-            if(e.key === "ArrowRight") k = "arrowright";
+            if(e.key === "ArrowLeft") k = "arrowleft"; if(e.key === "ArrowRight") k = "arrowright";
             keys[k] = false; 
         });
 
         function startGame(mode) {
-            gameMode = mode;
-            p1Score = 0; p2Score = 0;
-            rainbowCountThisGame = 0;
-            roundsSinceLastRainbow = 99;
-            document.getElementById('p1-score').innerText = "0";
-            document.getElementById('p2-score').innerText = "0";
-            document.getElementById('menu').style.display = 'none';
-            document.getElementById('game-over').style.display = 'none';
+            gameMode = mode; p1Score = 0; p2Score = 0; rainbowCountThisGame = 0; roundsSinceLastRainbow = 99;
+            document.getElementById('p1-score').innerText = "0"; document.getElementById('p2-score').innerText = "0";
+            document.getElementById('menu').style.display = 'none'; document.getElementById('game-over').style.display = 'none';
             document.getElementById('game-ui').style.display = 'block';
-            gameStarted = true;
-            resetRound();
-            window.focus();
+            gameStarted = true; resetRound(); window.focus();
         }
 
         function resetGame() {
-            p1Score = 0; p2Score = 0;
-            rainbowCountThisGame = 0;
-            roundsSinceLastRainbow = 99;
-            document.getElementById('p1-score').innerText = "0";
-            document.getElementById('p2-score').innerText = "0";
+            p1Score = 0; p2Score = 0; rainbowCountThisGame = 0; roundsSinceLastRainbow = 99;
+            document.getElementById('p1-score').innerText = "0"; document.getElementById('p2-score').innerText = "0";
             document.getElementById('game-over').style.display = 'none';
-            gameStarted = true;
-            resetRound();
+            gameStarted = true; resetRound();
         }
 
         function goHome() {
-            document.getElementById('game-over').style.display = 'none';
-            document.getElementById('game-ui').style.display = 'none';
-            document.getElementById('menu').style.display = 'flex';
-            gameStarted = false;
+            document.getElementById('game-over').style.display = 'none'; document.getElementById('game-ui').style.display = 'none';
+            document.getElementById('menu').style.display = 'flex'; gameStarted = false;
         }
 
+        // ================= SCENE SETUP & LIGHTING =================
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x2a3040); // 밝아진 기본 배경색
+        scene.fog = new THREE.FogExp2(0x2a3040, 0.015); // 자연스러운 거리감을 위한 안개 효과 추가
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 6.5, 18); // 시야 조금 더 확보
+        camera.position.set(0, 7.5, 22); 
         camera.lookAt(0, 3.0, 0);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true; // 그림자 활성화
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(renderer.domElement);
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.95));
-        const sunLight = new THREE.DirectionalLight(0xffffff, 0.4);
-        sunLight.position.set(5, 15, 10);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        
+        const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        sunLight.position.set(10, 20, 15);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048; // 고해상도 그림자
+        sunLight.shadow.mapSize.height = 2048;
+        sunLight.shadow.camera.near = 0.5;
+        sunLight.shadow.camera.far = 50;
+        sunLight.shadow.camera.left = -20;
+        sunLight.shadow.camera.right = 20;
+        sunLight.shadow.camera.top = 15;
+        sunLight.shadow.camera.bottom = -15;
+        sunLight.shadow.bias = -0.001;
         scene.add(sunLight);
 
-        const courtMaterial = new THREE.MeshStandardMaterial({ color: 0xf09351, roughness: 0.3 });
-        const court = new THREE.Mesh(new THREE.BoxGeometry(26, 0.4, 6), courtMaterial);
+        // ================= ENVIRONMENT & BACKGROUND =================
+        const bgGroup = new THREE.Group();
+        scene.add(bgGroup);
+
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x1a1c23, roughness: 0.8 });
+        const groundPlane = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), groundMat);
+        groundPlane.rotation.x = -Math.PI / 2;
+        groundPlane.position.y = -0.4;
+        groundPlane.receiveShadow = true;
+        scene.add(groundPlane);
+
+        const courtMaterial = new THREE.MeshStandardMaterial({ color: 0xf09351, roughness: 0.2 });
+        const court = new THREE.Mesh(new THREE.BoxGeometry(26, 0.4, 8), courtMaterial);
         court.position.y = -0.2;
+        court.receiveShadow = true;
         scene.add(court);
 
-        const centerLine = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.42, 6), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+        const centerLine = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.42, 8), new THREE.MeshStandardMaterial({ color: 0xffffff }));
         centerLine.position.set(0, -0.19, 0);
+        centerLine.receiveShadow = true;
         scene.add(centerLine);
 
+        function buildBackground(theme) {
+            while(bgGroup.children.length > 0) bgGroup.remove(bgGroup.children[0]);
+            
+            // 휑하지 않게 뒤쪽에 관중석/건물 느낌의 배경 구조물 절차적 생성
+            for (let i = 0; i < 40; i++) {
+                let h = Math.random() * 15 + 5;
+                let w = Math.random() * 5 + 2;
+                let color = 0x334455;
+                if (theme === "CyberPunk") color = Math.random() > 0.5 ? 0xff0055 : 0x00ffff;
+                if (theme === "RetroGold") color = 0x886611;
+                
+                let bMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7 });
+                let building = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), bMat);
+                building.position.set((Math.random() - 0.5) * 80, h/2 - 0.5, -20 - Math.random() * 30);
+                building.castShadow = true;
+                building.receiveShadow = true;
+                bgGroup.add(building);
+            }
+        }
+
+        // ================= GOALS =================
         let leftGoalGroup = new THREE.Group(), rightGoalGroup = new THREE.Group();
         scene.add(leftGoalGroup); scene.add(rightGoalGroup);
         let leftRimPos = new THREE.Vector3(), rightRimPos = new THREE.Vector3();
-        let rimRadius = 0.42;
-        let currentpH = 4.8; 
+        let rimRadius = 0.42; let currentpH = 4.8; 
 
         function buildGoals(type) {
             while(leftGoalGroup.children.length > 0) leftGoalGroup.remove(leftGoalGroup.children[0]);
             while(rightGoalGroup.children.length > 0) rightGoalGroup.remove(rightGoalGroup.children[0]);
-            leftGoalGroup.position.set(-11, 0, 0);
-            rightGoalGroup.position.set(11, 0, 0);
+            leftGoalGroup.position.set(-11, 0, 0); rightGoalGroup.position.set(11, 0, 0);
 
             let pH = 4.8, rH = 3.8; rimRadius = 0.42;
             if(type === "Mini") { pH = 3.2; rH = 2.2; rimRadius = 0.3; }
@@ -202,461 +222,241 @@
             currentpH = pH;
 
             function makeNet(group, isLeft) {
-                const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, pH, 16), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
-                pole.position.y = pH / 2; group.add(pole);
+                const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, pH, 16), new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness:0.5 }));
+                pole.position.y = pH / 2; pole.castShadow = true; group.add(pole);
                 
-                const board = new THREE.Mesh(new THREE.BoxGeometry(0.15, rimRadius*3.5, rimRadius*5), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-                board.position.set(isLeft ? 0.5 : -0.5, pH - 0.3, 0); group.add(board);
+                const board = new THREE.Mesh(new THREE.BoxGeometry(0.15, rimRadius*3.5, rimRadius*5), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 }));
+                board.position.set(isLeft ? 0.5 : -0.5, pH - 0.3, 0); board.castShadow = true; group.add(board);
                 
-                const rim = new THREE.Mesh(new THREE.TorusGeometry(rimRadius, 0.04, 8, 24), new THREE.MeshStandardMaterial({ color: 0xff4400 }));
-                rim.rotation.x = Math.PI / 2; rim.position.set(isLeft ? 0.5 + rimRadius : -0.5 - rimRadius, rH, 0); group.add(rim);
+                const rim = new THREE.Mesh(new THREE.TorusGeometry(rimRadius, 0.04, 12, 24), new THREE.MeshStandardMaterial({ color: 0xff4400 }));
+                rim.rotation.x = Math.PI / 2; rim.position.set(isLeft ? 0.5 + rimRadius : -0.5 - rimRadius, rH, 0); rim.castShadow = true; group.add(rim);
 
-                // 그물망 추가
-                const netMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.5 });
-                const net = new THREE.Mesh(new THREE.CylinderGeometry(rimRadius, rimRadius * 0.7, 0.6, 12), netMaterial);
-                net.position.set(isLeft ? 0.5 + rimRadius : -0.5 - rimRadius, rH - 0.3, 0);
-                group.add(net);
+                const netMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.6 });
+                const net = new THREE.Mesh(new THREE.CylinderGeometry(rimRadius, rimRadius * 0.6, 0.6, 16, 3), netMaterial);
+                net.position.set(isLeft ? 0.5 + rimRadius : -0.5 - rimRadius, rH - 0.3, 0); group.add(net);
 
                 return rim.position;
             }
             leftRimPos = makeNet(leftGoalGroup, true); rightRimPos = makeNet(rightGoalGroup, false);
         }
 
+        // ================= IMPROVED PLAYER MODELS (CAPSULES) =================
         function createPlayer(teamColor, xPos, isForward, headType, armType, legType) {
-            const root = new THREE.Group();
-            root.position.set(xPos, 0, 0);
-            scene.add(root);
-
-            const pivot = new THREE.Group();
-            root.add(pivot);
+            const root = new THREE.Group(); root.position.set(xPos, 0, 0); scene.add(root);
+            const pivot = new THREE.Group(); root.add(pivot);
 
             const skinColors = [0xffe0bd, 0xffd1a4, 0xe0ac69, 0xc68642, 0x4a2f13];
             const chosenSkin = skinColors[Math.floor(Math.random() * skinColors.length)];
-
             const sizes = { "basic": 1.0, "small": 0.45, "short": 0.45, "big": 1.8, "long": 1.8 };
 
-            const headScale = sizes[headType];
-            const armScale = sizes[armType];
-            const legScale = sizes[legType];
+            const headScale = sizes[headType], armScale = sizes[armType], legScale = sizes[legType];
+            const baseLegH = 0.6 * legScale, baseBodyH = 0.9, headSize = 0.4 * headScale;
+            
+            const matTeam = new THREE.MeshStandardMaterial({ color: teamColor, roughness: 0.6 });
+            const matSkin = new THREE.MeshStandardMaterial({ color: chosenSkin, roughness: 0.4 });
+            
+            // 직사각형 박스 대신 부드러운 캡슐(Capsule) 형태로 변경
+            const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.24, baseBodyH * 0.6, 4, 16), matTeam);
+            body.position.y = baseLegH + (baseBodyH / 2) + 0.1; body.castShadow = true; pivot.add(body);
 
-            const baseLegH = 0.6 * legScale;
-            const basePantsH = 0.2;
-            const baseBodyH = 1.0;
-            const headSize = 0.38 * headScale;
-
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.44, baseBodyH, 0.44), new THREE.MeshStandardMaterial({ color: teamColor }));
-            body.position.y = baseLegH + basePantsH + (baseBodyH / 2); 
-            pivot.add(body);
-
-            const head = new THREE.Mesh(new THREE.BoxGeometry(headSize, headSize, headSize), new THREE.MeshStandardMaterial({ color: chosenSkin }));
-            head.position.y = body.position.y + (baseBodyH / 2) + (headSize / 2);
-            pivot.add(head);
+            // 머리를 구(Sphere) 형태로 변경
+            const head = new THREE.Mesh(new THREE.SphereGeometry(headSize/2, 24, 24), matSkin);
+            head.position.y = body.position.y + (baseBodyH / 2) + (headSize / 2) - 0.05; head.castShadow = true; pivot.add(head);
 
             const hairColors = [0x111111, 0x332211, 0x775522, 0xaa8844];
-            const hairMat = new THREE.MeshStandardMaterial({ color: hairColors[Math.floor(Math.random() * hairColors.length)] });
-            const hair = new THREE.Mesh(new THREE.BoxGeometry(headSize + 0.04, headSize * 0.4, headSize + 0.04), hairMat);
-            hair.position.set(0, head.position.y + (headSize / 2) - (headSize * 0.1), 0);
-            pivot.add(hair);
+            const hair = new THREE.Mesh(new THREE.SphereGeometry(headSize/2 * 1.05, 24, 24, 0, Math.PI * 2, 0, Math.PI/2), new THREE.MeshStandardMaterial({ color: hairColors[Math.floor(Math.random() * hairColors.length)], roughness: 0.9 }));
+            hair.position.copy(head.position); hair.position.y += 0.02; hair.castShadow = true; pivot.add(hair);
 
-            const armW = 0.14; const armH = 0.9 * armScale;
-            const arm = new THREE.Mesh(new THREE.BoxGeometry(armW, armH, armW), new THREE.MeshStandardMaterial({ color: chosenSkin }));
-            arm.position.set(isForward ? 0.24 : -0.24, body.position.y + 0.1, 0); 
-            pivot.add(arm);
+            const armR = 0.08, armH = 0.8 * armScale;
+            const arm = new THREE.Mesh(new THREE.CapsuleGeometry(armR, armH - (armR*2), 4, 12), matSkin);
+            arm.position.set(isForward ? 0.28 : -0.28, body.position.y + 0.1, 0); arm.castShadow = true; pivot.add(arm);
 
-            const pants = new THREE.Mesh(new THREE.BoxGeometry(0.46, basePantsH, 0.46), new THREE.MeshStandardMaterial({ color: 0x252525 }));
-            pants.position.y = baseLegH + (basePantsH / 2);
-            pivot.add(pants);
+            const legR = 0.1;
+            const leftLeg = new THREE.Mesh(new THREE.CapsuleGeometry(legR, baseLegH - (legR*2), 4, 12), matSkin);
+            leftLeg.position.set(-0.14, baseLegH / 2, 0); leftLeg.castShadow = true; pivot.add(leftLeg);
 
-            const legW = 0.14;
-            const legMat = new THREE.MeshStandardMaterial({ color: chosenSkin });
-            
-            const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(legW, baseLegH, legW), legMat);
-            leftLeg.position.set(-0.12, baseLegH / 2, 0); pivot.add(leftLeg);
-
-            const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(legW, baseLegH, legW), legMat);
-            rightLeg.position.set(0.12, baseLegH / 2, 0); pivot.add(rightLeg);
+            const rightLeg = new THREE.Mesh(new THREE.CapsuleGeometry(legR, baseLegH - (legR*2), 4, 12), matSkin);
+            rightLeg.position.set(0.14, baseLegH / 2, 0); rightLeg.castShadow = true; pivot.add(rightLeg);
 
             // 신발 추가
-            const shoeMat = new THREE.MeshStandardMaterial({ color: 0xdddddd });
-            const leftShoe = new THREE.Mesh(new THREE.BoxGeometry(legW * 1.2, 0.15, legW * 1.5), shoeMat);
-            leftShoe.position.set(0, -baseLegH / 2 + 0.075, 0.05);
-            leftLeg.add(leftShoe); 
+            const shoeMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.8 });
+            const shoeGeo = new THREE.CapsuleGeometry(0.12, 0.1, 4, 12);
+            const leftShoe = new THREE.Mesh(shoeGeo, shoeMat);
+            leftShoe.rotation.x = Math.PI / 2; leftShoe.position.set(0, -baseLegH / 2 + 0.05, 0.05); leftShoe.castShadow = true; leftLeg.add(leftShoe);
+            
+            const rightShoe = new THREE.Mesh(shoeGeo, shoeMat);
+            rightShoe.rotation.x = Math.PI / 2; rightShoe.position.set(0, -baseLegH / 2 + 0.05, 0.05); rightShoe.castShadow = true; rightLeg.add(rightShoe);
 
-            const rightShoe = new THREE.Mesh(new THREE.BoxGeometry(legW * 1.2, 0.15, legW * 1.5), shoeMat);
-            rightShoe.position.set(0, -baseLegH / 2 + 0.075, 0.05);
-            rightLeg.add(rightShoe);
-
-            const totalCenterHeight = body.position.y;
-
-            return { 
-                root, pivot, arm, leftLeg, rightLeg, 
-                velX: 0, velY: 0, isGrounded: true, isForward, 
-                offset: Math.random()*50, targetRotZ: 0, targetLegRot: 0, bodyBob: 0,
-                centerH: totalCenterHeight, legScale: legScale, armScale: armScale
-            };
+            return { root, pivot, arm, leftLeg, rightLeg, velX: 0, velY: 0, isGrounded: true, isForward, offset: Math.random()*50, targetRotZ: 0, targetLegRot: 0, bodyBob: 0, centerH: body.position.y, legScale, armScale };
         }
 
         let team1 = [], team2 = [];
         const ballMaterial = new THREE.MeshStandardMaterial({ color: 0xff6600, roughness:0.3 });
-        const ball = new THREE.Mesh(new THREE.SphereGeometry(0.3, 24, 24), ballMaterial);
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(0.32, 32, 32), ballMaterial);
+        ball.castShadow = true;
         scene.add(ball);
 
-        let ballVel = new THREE.Vector3();
-        let ballOwner = null; 
-        let pickupCooldown = 0; let stealCooldown = 0; 
-        let p1Score = 0, p2Score = 0;
-        let isTransitioning = false; 
-        
-        let currentGoalType = "Normal";
-        let currentBallType = "Basketball";
-        let currentCourtType = "Normal"; 
-        let goalMoveTimer = 0;
+        let ballVel = new THREE.Vector3(), ballOwner = null, pickupCooldown = 0, stealCooldown = 0; 
+        let p1Score = 0, p2Score = 0, isTransitioning = false, currentGoalType = "Normal", currentBallType = "Basketball", currentCourtType = "Normal", goalMoveTimer = 0;
 
+        // ================= GAME LOGIC =================
         function resetRound() {
             isTransitioning = false;
-            team1.forEach(p => scene.remove(p.root));
-            team2.forEach(p => scene.remove(p.root));
+            team1.forEach(p => scene.remove(p.root)); team2.forEach(p => scene.remove(p.root));
+            p1ChargeTime = 0; p2ChargeTime = 0; p1IsCharging = false; p2IsCharging = false;
+
+            const headOptions = ["basic", "small", "big"], armOptions = ["basic", "short", "long"], legOptions = ["basic", "short", "long"];
+            const roundHead = headOptions[Math.floor(Math.random() * 3)], roundArm = armOptions[Math.floor(Math.random() * 3)], roundLeg = legOptions[Math.floor(Math.random() * 3)];
             
-            p1ChargeTime = 0; p2ChargeTime = 0;
-            p1IsCharging = false; p2IsCharging = false;
+            team1 = [createPlayer(0x2255ff, -2.6, true, roundHead, roundArm, roundLeg), createPlayer(0x0033bb, -5.5, false, roundHead, roundArm, roundLeg)];
+            team2 = [createPlayer(0xff3333, 2.6, true, roundHead, roundArm, roundLeg), createPlayer(0xbb0000, 6.5, false, roundHead, roundArm, roundLeg)];
 
-            const headOptions = ["basic", "small", "big"];
-            const armOptions = ["basic", "short", "long"];
-            const legOptions = ["basic", "short", "long"];
-
-            const roundHead = headOptions[Math.floor(Math.random() * 3)];
-            const roundArm = armOptions[Math.floor(Math.random() * 3)];
-            const roundLeg = legOptions[Math.floor(Math.random() * 3)];
-            
-            team1 = [
-                createPlayer(0x2255ff, -2.6, true, roundHead, roundArm, roundLeg), 
-                createPlayer(0x0033bb, -5.5, false, roundHead, roundArm, roundLeg)
-            ];
-            team2 = [
-                createPlayer(0xff3333, 2.6, true, roundHead, roundArm, roundLeg), 
-                createPlayer(0xbb0000, 6.5, false, roundHead, roundArm, roundLeg)
-            ];
-
-            let bTypes = ["Basketball", "Soccer", "Bowling"];
-            roundsSinceLastRainbow++;
-
-            if (rainbowCountThisGame < 1 && roundsSinceLastRainbow >= 2) {
-                if (Math.random() < 0.25) { 
-                    bTypes.push("Rainbow");
-                }
-            }
-
+            let bTypes = ["Basketball", "Soccer", "Bowling"]; roundsSinceLastRainbow++;
+            if (rainbowCountThisGame < 1 && roundsSinceLastRainbow >= 2 && Math.random() < 0.25) bTypes.push("Rainbow");
             currentBallType = bTypes[Math.floor(Math.random() * bTypes.length)];
-            ballMaterial.metalness = 0.0; ballMaterial.roughness = 0.3;
 
-            // 볼링공 색상 및 재질 밝게 수정
-            if(currentBallType === "Rainbow") { 
-                ballMaterial.color.setHex(0xffffff);
-                rainbowCountThisGame++;
-                roundsSinceLastRainbow = 0;
-            }
+            ballMaterial.metalness = 0.0; ballMaterial.roughness = 0.3;
+            if(currentBallType === "Rainbow") { ballMaterial.color.setHex(0xffffff); rainbowCountThisGame++; roundsSinceLastRainbow = 0; }
             else if(currentBallType === "Soccer") ballMaterial.color.setHex(0xffffff);
-            else if(currentBallType === "Bowling") { 
-                ballMaterial.color.setHex(0xaabbcc); 
-                ballMaterial.metalness = 0.9; 
-                ballMaterial.roughness = 0.1; 
-            }
+            else if(currentBallType === "Bowling") { ballMaterial.color.setHex(0x99aabb); ballMaterial.metalness = 0.9; ballMaterial.roughness = 0.1; }
             else ballMaterial.color.setHex(0xff6600);
 
-            const gTypes = ["Normal", "Mini", "Giant", "Moving"];
-            currentGoalType = gTypes[Math.floor(Math.random() * gTypes.length)];
-            buildGoals(currentGoalType === "Moving" ? "Normal" : currentGoalType);
-
-            const mapStyles = ["Normal", "Ice", "Mud", "CyberPunk", "RetroGold"];
-            currentCourtType = mapStyles[Math.floor(Math.random() * mapStyles.length)];
+            const gTypes = ["Normal", "Mini", "Giant", "Moving"]; currentGoalType = gTypes[Math.floor(Math.random() * gTypes.length)]; buildGoals(currentGoalType === "Moving" ? "Normal" : currentGoalType);
+            const mapStyles = ["Normal", "Ice", "Mud", "CyberPunk", "RetroGold"]; currentCourtType = mapStyles[Math.floor(Math.random() * mapStyles.length)];
             
-            // 테마별 코트/배경색 시인성 강화
-            if(currentCourtType === "Ice") { 
-                courtMaterial.color.setHex(0xa3e5ff); courtMaterial.roughness = 0.02; scene.background.setHex(0x5588aa); 
-            } else if(currentCourtType === "Mud") { 
-                courtMaterial.color.setHex(0x6e503b); courtMaterial.roughness = 0.9; scene.background.setHex(0x4a3b2c); 
-            } else if(currentCourtType === "CyberPunk") { 
-                courtMaterial.color.setHex(0xff0055); courtMaterial.roughness = 0.15; scene.background.setHex(0x2a0033); 
-            } else if(currentCourtType === "RetroGold") { 
-                courtMaterial.color.setHex(0xcca300); courtMaterial.roughness = 0.4; scene.background.setHex(0x443311); 
-            } else { 
-                courtMaterial.color.setHex(0xf09351); courtMaterial.roughness = 0.3; scene.background.setHex(0x2a3040); 
-            }
-
-            let headEn = {"basic":"NORMAL", "small":"MINI", "big":"BIG"}[roundHead];
-            let armEn = {"basic":"NORMAL", "short":"SHORT", "long":"LONG"}[roundArm];
-            let legEn = {"basic":"NORMAL", "short":"SHORT", "long":"LONG"}[roundLeg];
+            buildBackground(currentCourtType); // 테마에 맞춰 배경 재생성
             
-            document.getElementById('info-body').innerText = `${headEn} H + ${armEn} A`;
+            if(currentCourtType === "Ice") { courtMaterial.color.setHex(0xa3e5ff); groundMat.color.setHex(0x334455); scene.background.setHex(0x5588aa); scene.fog.color.setHex(0x5588aa); } 
+            else if(currentCourtType === "Mud") { courtMaterial.color.setHex(0x6e503b); groundMat.color.setHex(0x2b221a); scene.background.setHex(0x4a3b2c); scene.fog.color.setHex(0x4a3b2c); } 
+            else if(currentCourtType === "CyberPunk") { courtMaterial.color.setHex(0xff0055); groundMat.color.setHex(0x110022); scene.background.setHex(0x2a0033); scene.fog.color.setHex(0x2a0033); } 
+            else if(currentCourtType === "RetroGold") { courtMaterial.color.setHex(0xcca300); groundMat.color.setHex(0x221a0a); scene.background.setHex(0x443311); scene.fog.color.setHex(0x443311); } 
+            else { courtMaterial.color.setHex(0xf09351); groundMat.color.setHex(0x1a1c23); scene.background.setHex(0x2a3040); scene.fog.color.setHex(0x2a3040); }
+
+            document.getElementById('info-body').innerText = `${roundHead.toUpperCase()} H + ${roundArm.toUpperCase()} A`;
             document.getElementById('info-ball').innerText = currentBallType.toUpperCase();
             document.getElementById('info-court').innerText = currentCourtType.toUpperCase();
             
-            ball.position.set(0, 6.0, 0);
-            ballVel.set((Math.random() - 0.5) * 3, 3.5, 0);
-            ballOwner = null; pickupCooldown = 0; stealCooldown = 0;
+            ball.position.set(0, 6.0, 0); ballVel.set((Math.random() - 0.5) * 3, 3.5, 0); ballOwner = null; pickupCooldown = 0; stealCooldown = 0;
         }
 
         function shoot(player, dirSign, chargeRatio = 0) {
             ballOwner = null; pickupCooldown = 0.4; 
-            
-            let basePowerX = 11.5; 
-            let basePowerY = 8.5;
-            let chargeMultiplier = 1.0 + (chargeRatio * 0.8);
-
+            let basePowerX = 11.5, basePowerY = 8.5, chargeMultiplier = 1.0 + (chargeRatio * 0.8);
             if(currentBallType === "Bowling") { basePowerX = 8.0; basePowerY = 5.8; } 
             if(currentBallType === "Soccer") { basePowerX = 13.5; basePowerY = 10.0; } 
             if(currentBallType === "Rainbow") { basePowerX = 12.0; basePowerY = 9.0; } 
-
-            if(currentGoalType === "Mini") { basePowerX *= 0.93; basePowerY *= 0.94; } 
-            else if(currentGoalType === "Giant") { basePowerX *= 1.06; basePowerY *= 1.12; } 
-            
+            if(currentGoalType === "Mini") { basePowerX *= 0.93; basePowerY *= 0.94; } else if(currentGoalType === "Giant") { basePowerX *= 1.06; basePowerY *= 1.12; } 
             ballVel.set(dirSign * basePowerX * chargeMultiplier, basePowerY * (1.0 + chargeRatio * 0.4), 0);
         }
 
         function triggerReleaseShoot(playerNum) {
-            if (playerNum === 1) {
-                if(p1IsCharging) {
-                    let ratio = Math.min(p1ChargeTime / 0.7, 1.0);
-                    team1.forEach(p => { if (ballOwner === p) shoot(p, 1, ratio); });
-                    p1IsCharging = false; p1ChargeTime = 0;
-                }
-            } else if (playerNum === 2) {
-                if(p2IsCharging) {
-                    let ratio = Math.min(p2ChargeTime / 0.7, 1.0);
-                    team2.forEach(p => { if (ballOwner === p) shoot(p, -1, ratio); });
-                    p2IsCharging = false; p2ChargeTime = 0;
-                }
-            }
+            if (playerNum === 1 && p1IsCharging) { let ratio = Math.min(p1ChargeTime / 0.7, 1.0); team1.forEach(p => { if (ballOwner === p) shoot(p, 1, ratio); }); p1IsCharging = false; p1ChargeTime = 0; }
+            else if (playerNum === 2 && p2IsCharging) { let ratio = Math.min(p2ChargeTime / 0.7, 1.0); team2.forEach(p => { if (ballOwner === p) shoot(p, -1, ratio); }); p2IsCharging = false; p2ChargeTime = 0; }
         }
 
         let jumpPower = 13.6; const gravity = -24.0; const dt = 0.016; let moveSpeed = 5.2;
 
         function processInputs() {
-            moveSpeed = 5.4; jumpPower = 13.6;
-            if(currentCourtType === "Mud") { moveSpeed = 3.2; jumpPower = 11.0; } 
-
-            let p1TargetVelX = 0;
-            if (keys['a']) p1TargetVelX = -moveSpeed;
-            if (keys['d']) p1TargetVelX = moveSpeed;
+            moveSpeed = currentCourtType === "Mud" ? 3.2 : 5.4; jumpPower = currentCourtType === "Mud" ? 11.0 : 13.6;
+            let p1TargetVelX = keys['a'] ? -moveSpeed : (keys['d'] ? moveSpeed : 0);
 
             if (keys['w']) {
-                if(!p1IsCharging) {
-                    team1.forEach(p => { if (p.isGrounded) { p.velY = jumpPower; p.isGrounded = false; } });
-                    p1IsCharging = true;
-                    p1ChargeTime = 0;
-                } else {
-                    p1ChargeTime += dt;
-                }
+                if(!p1IsCharging) { team1.forEach(p => { if (p.isGrounded) { p.velY = jumpPower; p.isGrounded = false; } }); p1IsCharging = true; p1ChargeTime = 0; } else p1ChargeTime += dt;
             }
-
             team1.forEach(p => { if(currentCourtType === "Ice") p.velX += (p1TargetVelX - p.velX) * 0.06; else p.velX = p1TargetVelX; });
 
             if (gameMode === 2) {
-                let p2TargetVelX = 0;
-                if (keys['arrowleft']) p2TargetVelX = -moveSpeed;
-                if (keys['arrowright']) p2TargetVelX = moveSpeed;
-
+                let p2TargetVelX = keys['arrowleft'] ? -moveSpeed : (keys['arrowright'] ? moveSpeed : 0);
                 if (keys['arrowup']) {
-                    if(!p2IsCharging) {
-                        team2.forEach(p => { if (p.isGrounded) { p.velY = jumpPower; p.isGrounded = false; } });
-                        p2IsCharging = true;
-                        p2ChargeTime = 0;
-                    } else {
-                        p2ChargeTime += dt;
-                    }
+                    if(!p2IsCharging) { team2.forEach(p => { if (p.isGrounded) { p.velY = jumpPower; p.isGrounded = false; } }); p2IsCharging = true; p2ChargeTime = 0; } else p2ChargeTime += dt;
                 }
                 team2.forEach(p => { if(currentCourtType === "Ice") p.velX += (p2TargetVelX - p.velX) * 0.06; else p.velX = p2TargetVelX; });
             } else {
                 team2.forEach(p => {
-                    let aiTargetX = 0;
-                    if (ball.position.x < p.root.position.x - 0.2) aiTargetX = -moveSpeed * 0.8;
-                    if (ball.position.x > p.root.position.x + 0.2) aiTargetX = moveSpeed * 0.8;
+                    let aiTargetX = ball.position.x < p.root.position.x - 0.2 ? -moveSpeed * 0.8 : (ball.position.x > p.root.position.x + 0.2 ? moveSpeed * 0.8 : 0);
                     if(currentCourtType === "Ice") p.velX += (aiTargetX - p.velX) * 0.06; else p.velX = aiTargetX;
-
-                    if (Math.random() < 0.025 && p.isGrounded) {
-                        p.velY = jumpPower * 0.95; p.isGrounded = false;
-                        if (ballOwner === p) {
-                            shoot(p, -1, Math.random() * 0.8);
-                        }
-                    }
+                    if (Math.random() < 0.025 && p.isGrounded) { p.velY = jumpPower * 0.95; p.isGrounded = false; if (ballOwner === p) shoot(p, -1, Math.random() * 0.8); }
                 });
             }
         }
 
         function updatePhysics(p) {
-            p.root.position.x += p.velX * dt;
-            let time = Date.now() * 0.006 + p.offset;
-
+            p.root.position.x += p.velX * dt; let time = Date.now() * 0.006 + p.offset;
             if (!p.isGrounded) {
                 p.velY += gravity * dt; p.root.position.y += p.velY * dt;
-                p.targetRotZ = Math.sin(time) * 0.54; 
-                p.targetLegRot = 0.5;
-                p.arm.rotation.z = p.isForward ? Math.PI * 0.4 : -Math.PI * 0.4; p.bodyBob = 0;
+                p.targetRotZ = Math.sin(time) * 0.54; p.targetLegRot = 0.5; p.arm.rotation.z = p.isForward ? Math.PI * 0.4 : -Math.PI * 0.4; p.bodyBob = 0;
             } else {
-                if (Math.abs(p.velX) > 0.4) {
-                    p.targetRotZ = (p.velX > 0 ? 0.18 : -0.18); 
-                    p.targetLegRot = Math.sin(time * 1.6) * 0.65; p.arm.rotation.z = Math.sin(time) * 0.35;
-                    p.bodyBob = Math.abs(Math.sin(time * 2.0)) * 0.08; 
-                } else {
-                    p.targetRotZ = 0; p.targetLegRot = 0; p.arm.rotation.z = Math.sin(time * 0.3) * 0.1; p.bodyBob = 0;
-                }
+                if (Math.abs(p.velX) > 0.4) { p.targetRotZ = (p.velX > 0 ? 0.18 : -0.18); p.targetLegRot = Math.sin(time * 1.6) * 0.65; p.arm.rotation.z = Math.sin(time) * 0.35; p.bodyBob = Math.abs(Math.sin(time * 2.0)) * 0.08; } 
+                else { p.targetRotZ = 0; p.targetLegRot = 0; p.arm.rotation.z = Math.sin(time * 0.3) * 0.1; p.bodyBob = 0; }
             }
-
-            p.pivot.rotation.z += (p.targetRotZ - p.pivot.rotation.z) * 0.15;
-            p.leftLeg.rotation.z += (p.targetLegRot - p.leftLeg.rotation.z) * 0.15;
-            p.rightLeg.rotation.z += (-p.targetLegRot - p.rightLeg.rotation.z) * 0.15;
+            p.pivot.rotation.z += (p.targetRotZ - p.pivot.rotation.z) * 0.15; p.leftLeg.rotation.z += (p.targetLegRot - p.leftLeg.rotation.z) * 0.15; p.rightLeg.rotation.z += (-p.targetLegRot - p.rightLeg.rotation.z) * 0.15;
             p.pivot.position.y = p.bodyBob;
-
-            if (p.root.position.y <= 0) { 
-                p.root.position.y = 0; 
-                p.velY = 0; 
-                p.isGrounded = true;
-            }
-            if (p.root.position.x < -11.5) p.root.position.x = -11.5;
-            if (p.root.position.x > 11.5) p.root.position.x = 11.5;
+            if (p.root.position.y <= 0) { p.root.position.y = 0; p.velY = 0; p.isGrounded = true; }
+            if (p.root.position.x < -11.5) p.root.position.x = -11.5; if (p.root.position.x > 11.5) p.root.position.x = 11.5;
         }
 
         function resolveCollisions() {
             if(team1.length < 2 || team2.length < 2) return;
             const heightLimit = 1.3;
-
-            let diffT1 = team1[0].root.position.x - team1[1].root.position.x;
-            let dyT1 = Math.abs(team1[0].root.position.y - team1[1].root.position.y);
-            if (Math.abs(diffT1) < 1.8 && dyT1 < heightLimit) {
-                let overlap = 1.8 - Math.abs(diffT1); team1[0].root.position.x += overlap * 0.5; team1[1].root.position.x -= overlap * 0.5;
-            }
-            let diffT2 = team2[1].root.position.x - team2[0].root.position.x;
-            let dyT2 = Math.abs(team2[1].root.position.y - team2[0].root.position.y);
-            if (Math.abs(diffT2) < 1.8 && dyT2 < heightLimit) {
-                let overlap = 1.8 - Math.abs(diffT2); team2[0].root.position.x -= overlap * 0.5; team2[1].root.position.x += overlap * 0.5;
-            }
+            let diffT1 = team1[0].root.position.x - team1[1].root.position.x; let dyT1 = Math.abs(team1[0].root.position.y - team1[1].root.position.y);
+            if (Math.abs(diffT1) < 1.8 && dyT1 < heightLimit) { let overlap = 1.8 - Math.abs(diffT1); team1[0].root.position.x += overlap * 0.5; team1[1].root.position.x -= overlap * 0.5; }
+            let diffT2 = team2[1].root.position.x - team2[0].root.position.x; let dyT2 = Math.abs(team2[1].root.position.y - team2[0].root.position.y);
+            if (Math.abs(diffT2) < 1.8 && dyT2 < heightLimit) { let overlap = 1.8 - Math.abs(diffT2); team2[0].root.position.x -= overlap * 0.5; team2[1].root.position.x += overlap * 0.5; }
             const all = [...team1, ...team2];
             for (let i = 0; i < all.length; i++) {
                 for (let j = i + 1; j < all.length; j++) {
-                    let pA = all[i]; let pB = all[j]; let dx = pA.root.position.x - pB.root.position.x; let dy = Math.abs(pA.root.position.y - pB.root.position.y);
-                    let minDist = 0.65;
-                    if (Math.abs(dx) < minDist && dy < heightLimit) {
-                        let overlap = minDist - Math.abs(dx); let sign = dx > 0 ? 1 : -1;
-                        pA.root.position.x += sign * overlap * 0.5; pB.root.position.x -= sign * overlap * 0.5;
-                    }
+                    let pA = all[i], pB = all[j], dx = pA.root.position.x - pB.root.position.x, dy = Math.abs(pA.root.position.y - pB.root.position.y);
+                    if (Math.abs(dx) < 0.65 && dy < heightLimit) { let overlap = 0.65 - Math.abs(dx); let sign = dx > 0 ? 1 : -1; pA.root.position.x += sign * overlap * 0.5; pB.root.position.x -= sign * overlap * 0.5; }
                 }
             }
         }
 
         function animate() {
             requestAnimationFrame(animate);
-            
             if (gameStarted) {
                 processInputs(); team1.forEach(updatePhysics); team2.forEach(updatePhysics); resolveCollisions();
-
-                if (currentBallType === "Rainbow") { let hue = (Date.now() * 0.001) % 1; ballMaterial.color.setHSL(hue, 1.0, 0.5); }
-
-                if (currentGoalType === "Moving") {
-                    goalMoveTimer += dt * 3; const offset = Math.sin(goalMoveTimer) * 1.5;
-                    leftGoalGroup.position.y = offset > 0 ? offset : 0; rightGoalGroup.position.y = offset < 0 ? -offset : 0;
-                } else { leftGoalGroup.position.y = 0; rightGoalGroup.position.y = 0; }
-
+                if (currentBallType === "Rainbow") { ballMaterial.color.setHSL((Date.now() * 0.001) % 1, 1.0, 0.5); }
+                if (currentGoalType === "Moving") { goalMoveTimer += dt * 3; const offset = Math.sin(goalMoveTimer) * 1.5; leftGoalGroup.position.y = offset > 0 ? offset : 0; rightGoalGroup.position.y = offset < 0 ? -offset : 0; } else { leftGoalGroup.position.y = 0; rightGoalGroup.position.y = 0; }
                 if (stealCooldown > 0) stealCooldown -= dt;
 
                 if (ballOwner === null) {
-                    let bGrav = gravity;
-                    if(currentBallType === "Bowling") bGrav *= 1.6; else if(currentBallType === "Soccer") bGrav *= 0.75;
-
+                    let bGrav = gravity * (currentBallType === "Bowling" ? 1.6 : (currentBallType === "Soccer" ? 0.75 : 1));
                     ballVel.y += bGrav * dt; ball.position.x += ballVel.x * dt; ball.position.y += ballVel.y * dt;
 
-                    let bounce = 0.75;
-                    if(currentBallType === "Bowling") bounce = 0.15; if(currentBallType === "Soccer") bounce = 0.92;
+                    let bounce = currentBallType === "Bowling" ? 0.15 : (currentBallType === "Soccer" ? 0.92 : 0.75);
+                    if (ball.position.y <= 0.32) { ball.position.y = 0.32; ballVel.y = -ballVel.y * bounce; ballVel.x *= 0.96; }
+                    
+                    // Invisible walls (천장 및 장외 방지)
+                    if (ball.position.y > 15.0) { ball.position.y = 15.0; ballVel.y = -ballVel.y * 0.5; }
+                    if (ball.position.x < -13.0) { ball.position.x = -13.0; ballVel.x = -ballVel.x * 0.5; }
+                    if (ball.position.x > 13.0) { ball.position.x = 13.0; ballVel.x = -ballVel.x * 0.5; }
 
-                    if (ball.position.y <= 0.3) { ball.position.y = 0.3; ballVel.y = -ballVel.y * bounce; ballVel.x *= 0.96; }
+                    let leftTopLimit = leftGoalGroup.position.y + currentpH + 0.6, rightTopLimit = rightGoalGroup.position.y + currentpH + 0.6;
+                    if (ball.position.x <= -10.5 && ball.position.x > -12.0 && ball.position.y < leftTopLimit) { ball.position.x = -10.45; ballVel.x = -ballVel.x * bounce; }
+                    if (ball.position.x >= 10.5 && ball.position.x < 12.0 && ball.position.y < rightTopLimit) { ball.position.x = 10.45; ballVel.x = -ballVel.x * bounce; }
+                    if (Math.abs(ball.position.x) > 13.4 && !isTransitioning) { isTransitioning = true; setTimeout(resetRound, 1000); }
 
-                    // 천장 투명 벽 (장외 방지)
-                    if (ball.position.y > 15.0) { 
-                        ball.position.y = 15.0; 
-                        ballVel.y = -ballVel.y * 0.5; 
-                    }
-                    // 왼쪽 투명 벽
-                    if (ball.position.x < -13.0) { 
-                        ball.position.x = -13.0; 
-                        ballVel.x = -ballVel.x * 0.5; 
-                    }
-                    // 오른쪽 투명 벽
-                    if (ball.position.x > 13.0) { 
-                        ball.position.x = 13.0; 
-                        ballVel.x = -ballVel.x * 0.5; 
-                    }
-
-                    let leftBoardLine = -10.5;
-                    let rightBoardLine = 10.5;
-                    let leftTopLimit = leftGoalGroup.position.y + currentpH + 0.6;
-                    let rightTopLimit = rightGoalGroup.position.y + currentpH + 0.6;
-
-                    if (ball.position.x <= leftBoardLine && ball.position.x > -12.0) {
-                        if (ball.position.y < leftTopLimit) {
-                            ball.position.x = leftBoardLine + 0.05;
-                            ballVel.x = -ballVel.x * bounce;
-                        }
-                    }
-                    if (ball.position.x >= rightBoardLine && ball.position.x < 12.0) {
-                        if (ball.position.y < rightTopLimit) {
-                            ball.position.x = rightBoardLine - 0.05;
-                            ballVel.x = -ballVel.x * bounce;
-                        }
-                    }
-
-                    if (Math.abs(ball.position.x) > 13.4 && !isTransitioning) {
-                        isTransitioning = true;
-                        setTimeout(resetRound, 1000); 
-                    }
-
-                    // 🛠️ 공 줍기 판정 범위를 1.6으로 더 넓힘
                     if (pickupCooldown > 0) { pickupCooldown -= dt; } else {
-                        const checkPickup = (p) => {
-                            let pPos = p.root.position.clone().add(new THREE.Vector3(0, p.centerH, 0));
-                            if (ball.position.distanceTo(pPos) < 1.6) { ballOwner = p; }
-                        };
+                        const checkPickup = (p) => { if (ball.position.distanceTo(p.root.position.clone().add(new THREE.Vector3(0, p.centerH, 0))) < 1.6) ballOwner = p; };
                         if(!isTransitioning) { team1.forEach(checkPickup); team2.forEach(checkPickup); }
                     }
                 } else {
                     const opponents = team1.includes(ballOwner) ? team2 : team1;
-                    if (stealCooldown <= 0) {
-                        opponents.forEach(p => {
-                            let pPos = p.root.position.clone().add(new THREE.Vector3(0, p.centerH, 0));
-                            if (ball.position.distanceTo(pPos) < 1.25) { ballOwner = p; stealCooldown = 0.2; }
-                        });
-                    }
+                    if (stealCooldown <= 0) opponents.forEach(p => { if (ball.position.distanceTo(p.root.position.clone().add(new THREE.Vector3(0, p.centerH, 0))) < 1.25) { ballOwner = p; stealCooldown = 0.2; } });
                     let side = team1.includes(ballOwner) ? 1 : -1;
-                    // 팔 길이에 비례하여 파지(Hold) 위치 조정 (팔이 짧으면 허공에 뜨지 않게)
-                    let holdDist = 0.2 + (ballOwner.armScale * 0.15); 
-                    ball.position.set(ballOwner.root.position.x + (side * holdDist), ballOwner.root.position.y + ballOwner.centerH + 0.1, 0); 
-                    ballVel.set(0, 0, 0);
+                    ball.position.set(ballOwner.root.position.x + (side * (0.2 + ballOwner.armScale * 0.15)), ballOwner.root.position.y + ballOwner.centerH + 0.1, 0); ballVel.set(0, 0, 0);
                 }
 
-                const worldLeftRim = leftGoalGroup.position.clone().add(leftRimPos);
-                const worldRightRim = rightGoalGroup.position.clone().add(rightRimPos);
-                let pointsToGive = (currentBallType === "Rainbow") ? 2 : 1;
-
-                if (!isTransitioning && ball.position.distanceTo(worldLeftRim) < rimRadius + 0.1 && ballVel.y < 0) {
-                    p2Score += pointsToGive; document.getElementById('p2-score').innerText = p2Score;
-                    if(p2Score >= 5) {
-                        gameStarted = false; document.getElementById('winner-text').innerText = "RED TEAM WINS!"; document.getElementById('game-over').style.display = 'flex';
-                    } else { resetRound(); }
-                }
-                if (!isTransitioning && ball.position.distanceTo(worldRightRim) < rimRadius + 0.1 && ballVel.y < 0) {
-                    p1Score += pointsToGive; document.getElementById('p1-score').innerText = p1Score;
-                    if(p1Score >= 5) {
-                        gameStarted = false; document.getElementById('winner-text').innerText = "BLUE TEAM WINS!"; document.getElementById('game-over').style.display = 'flex';
-                    } else { resetRound(); }
-                }
+                const worldLeftRim = leftGoalGroup.position.clone().add(leftRimPos), worldRightRim = rightGoalGroup.position.clone().add(rightRimPos);
+                let pts = currentBallType === "Rainbow" ? 2 : 1;
+                if (!isTransitioning && ball.position.distanceTo(worldLeftRim) < rimRadius + 0.1 && ballVel.y < 0) { p2Score += pts; document.getElementById('p2-score').innerText = p2Score; if(p2Score >= 5) { gameStarted = false; document.getElementById('winner-text').innerText = "RED TEAM WINS!"; document.getElementById('game-over').style.display = 'flex'; } else resetRound(); }
+                if (!isTransitioning && ball.position.distanceTo(worldRightRim) < rimRadius + 0.1 && ballVel.y < 0) { p1Score += pts; document.getElementById('p1-score').innerText = p1Score; if(p1Score >= 5) { gameStarted = false; document.getElementById('winner-text').innerText = "BLUE TEAM WINS!"; document.getElementById('game-over').style.display = 'flex'; } else resetRound(); }
             }
             renderer.render(scene, camera);
         }
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-        
-        resetRound();
-        animate();
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+        resetRound(); animate();
     </script>
 </body>
 </html>
